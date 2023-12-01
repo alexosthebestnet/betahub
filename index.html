@@ -65,6 +65,7 @@ const silenceDelay = 2000; // 2 seconds
 let silenceTimer;
 let messages = [];
 const maxMessages = 8; // Maximum number of messages to keep
+let checkRecognitionInterval;
 
 window.onload = function() {
     const savedMessages = localStorage.getItem('messages');
@@ -72,20 +73,36 @@ window.onload = function() {
         messages = JSON.parse(savedMessages);
     }
     setGif('https://i.ibb.co/R9Lxd4W/Default-photo.jpg'); // Set default GIF
+    startSpeechRecognition();
+    checkRecognitionInterval = setInterval(checkSpeechRecognition, 3000);
 };
 
-recognition.continuous = true;
-recognition.interimResults = true;
-recognition.lang = 'en-US';
+function startSpeechRecognition() {
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+    recognition.start();
+    recognition.onresult = handleSpeechResult;
+    recognition.onerror = handleSpeechError;
+}
 
-recognition.onresult = function(event) {
+function checkSpeechRecognition() {
+    if (!recognition.continuous) {
+        startSpeechRecognition();
+    }
+}
+
+function handleSpeechResult(event) {
     clearTimeout(silenceTimer);
 
     const currentTranscript = Array.from(event.results)
                                    .map(result => result[0].transcript)
                                    .join('');
 
-    if (!listeningForCommand && currentTranscript.toLowerCase().includes(wakeWord)) {
+    if (currentTranscript.toLowerCase().includes(wakeWord)) {
+        if (listeningForCommand) {
+            responsiveVoice.cancel(); // Stop current speech
+        }
         listeningForCommand = true;
         lastTranscript = '';
         setGif('https://i.ibb.co/JkRhNz4/Listening.gif');
@@ -93,27 +110,29 @@ recognition.onresult = function(event) {
     } else if (listeningForCommand) {
         lastTranscript = currentTranscript;
         silenceTimer = setTimeout(() => {
-            const commandAfterWakeWord = lastTranscript.substring(lastTranscript.toLowerCase().indexOf(wakeWord) + wakeWord.length).trim();
-            if (commandAfterWakeWord) {
-                setGif('https://i.ibb.co/0CV9sYB/Thinking.gif');
-                sendCommandToAPI(commandAfterWakeWord);
-            } else {
-                setGif('https://i.ibb.co/Js4KZDw/Nothing-detected.gif');
-            }
-            listeningForCommand = false;
-            recognition.stop(); // Stop recognition while processing the command
+            processCommand(lastTranscript);
         }, silenceDelay);
     }
-};
+}
 
-recognition.onerror = function(event) {
+function processCommand(transcript) {
+    const commandAfterWakeWord = transcript.substring(transcript.toLowerCase().indexOf(wakeWord) + wakeWord.length).trim();
+    if (commandAfterWakeWord) {
+        setGif('https://i.ibb.co/0CV9sYB/Thinking.gif');
+        sendCommandToAPI(commandAfterWakeWord);
+    } else {
+        setGif('https://i.ibb.co/Js4KZDw/Nothing-detected.gif');
+    }
+    listeningForCommand = false;
+    recognition.stop(); // Stop recognition while processing the command
+}
+
+function handleSpeechError(event) {
     if (event.error === 'no-speech') {
         setGif('https://i.ibb.co/dLKr4Mk/Error.gif');
-        restartRecognition();
+        startSpeechRecognition();
     }
-};
-
-recognition.start();
+}
 
 function addSystemMessage() {
     const today = new Date().toLocaleDateString();
@@ -127,36 +146,44 @@ function sendCommandToAPI(command) {
     messages.push({ role: 'user', content: command });
     trimMessages();
 
-    fetch("https://api.deepinfra.com/v1/openai/chat/completions", {
+    // GCP TTS Request
+    fetch("https://texttospeech.googleapis.com/v1beta1/text:synthesize", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
-            "Authorization": "Bearer HnO6SXFKeKem8tkzRo8f8LAbeWL42F6h" // Your API key
+            "Authorization": "Bearer AIzaSyBYbAgB_KXOHimR46Ox7E7WRl_A36_hmwk" // Replace with your actual GCP API key
         },
         body: JSON.stringify({
-            "model": "mistralai/Mistral-7B-Instruct-v0.1",
-            "messages": messages
+            "audioConfig": {
+                "audioEncoding": "LINEAR16",
+                "effectsProfileId": ["small-bluetooth-speaker-class-device"],
+                "pitch": 0,
+                "speakingRate": 1
+            },
+            "input": { "text": command },
+            "voice": {
+                "languageCode": "en-US",
+                "name": "en-US-Standard-I"
+            }
         })
     })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-    })
+    .then(response => response.json())
     .then(data => {
-        const reply = data.choices[0].message.content;
-        console.log("API Response:", reply);
-        messages.push({ role: 'assistant', content: reply });
-        trimMessages();
-        speakResponse(reply);
-        saveMessages();
+        playSynthesizedSpeech(data.audioContent);
     })
     .catch(error => {
-        console.error("API Error:", error.message);
+        console.error("GCP TTS Error:", error.message);
         setGif('https://i.ibb.co/dLKr4Mk/Error.gif');
-        document.getElementById('status').textContent = error.message;
     });
+}
+
+function playSynthesizedSpeech(base64Audio) {
+    const audio = new Audio("data:audio/wav;base64," + base64Audio);
+    audio.play();
+    audio.onended = function() {
+        setGif('https://i.ibb.co/R9Lxd4W/Default-photo.jpg');
+        recognition.start(); // Restart recognition after speaking
+    };
 }
 
 function trimMessages() {
@@ -167,17 +194,6 @@ function trimMessages() {
 
 function saveMessages() {
     localStorage.setItem('messages', JSON.stringify(messages));
-}
-
-function speakResponse(response) {
-    console.log("Speaking:", response);
-    setGif('https://i.ibb.co/ftsz0Xx/Responding.gif');
-    responsiveVoice.speak(response, "UK English Male", {
-        onend: function() {
-            setGif('https://i.ibb.co/R9Lxd4W/Default-photo.jpg');
-            recognition.start(); // Restart recognition after speaking
-        }
-    });
 }
 
 function setGif(gifPath) {
@@ -203,6 +219,7 @@ function restartRecognition() {
         recognition.start();
     }, 1000);
 }
+
 
     </script>
 </body>
