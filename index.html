@@ -99,8 +99,7 @@ function handleSpeechResult(event) {
 
     if (currentTranscript.toLowerCase().includes(wakeWord)) {
         if (listeningForCommand) {
-            // Stop current speech synthesis
-            responsiveVoice.cancel();
+            window.speechSynthesis.cancel(); // Stop current speech synthesis
         }
         listeningForCommand = true;
         setGif('https://i.ibb.co/JkRhNz4/Listening.gif');
@@ -126,63 +125,52 @@ function processCommand(transcript) {
     recognition.stop(); // Stop recognition while processing the command
 }
 
-function handleSpeechError(event) {
-    if (event.error === 'no-speech') {
-        setGif('https://i.ibb.co/dLKr4Mk/Error.gif');
-        startSpeechRecognition();
-    }
-}
-
-function addSystemMessage() {
-    const today = new Date().toLocaleDateString();
-    const systemMessage = `Today's date is ${today}. I am an AI assistant designed to respond to your voice commands.`;
-    messages.push({ role: 'system', content: systemMessage });
-    trimMessages();
-}
-
 function sendCommandToAPI(command) {
     console.log("Sending command to API:", command);
     messages.push({ role: 'user', content: command });
     trimMessages();
 
-    // GCP TTS Request
-    fetch("https://texttospeech.googleapis.com/v1beta1/text:synthesize", {
+    fetch("https://api.deepinfra.com/v1/openai/chat/completions", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
-            "Authorization": "Bearer AIzaSyBYbAgB_KXOHimR46Ox7E7WRl_A36_hmwk" // Replace with your actual GCP API key
+            "Authorization": "Bearer HnO6SXFKeKem8tkzRo8f8LAbeWL42F6h" // Replace with your actual DeepInfra API key
         },
         body: JSON.stringify({
-            "audioConfig": {
-                "audioEncoding": "LINEAR16",
-                "effectsProfileId": ["small-bluetooth-speaker-class-device"],
-                "pitch": 0,
-                "speakingRate": 1
-            },
-            "input": { "text": command },
-            "voice": {
-                "languageCode": "en-US",
-                "name": "en-US-Standard-I"
-            }
+            "model": "mistralai/Mistral-7B-Instruct-v0.1",
+            "messages": messages
         })
     })
     .then(response => response.json())
     .then(data => {
-        playSynthesizedSpeech(data.audioContent);
+        const reply = data.choices[0].message.content;
+        console.log("API Response:", reply);
+        messages.push({ role: 'assistant', content: reply });
+        trimMessages();
+        speakResponse(reply);
+        saveMessages();
     })
     .catch(error => {
-        console.error("GCP TTS Error:", error.message);
+        console.error("API Error:", error.message);
         setGif('https://i.ibb.co/dLKr4Mk/Error.gif');
     });
 }
 
-function playSynthesizedSpeech(base64Audio) {
-    const audio = new Audio("data:audio/wav;base64," + base64Audio);
-    audio.play();
-    audio.onended = function() {
+function speakResponse(response) {
+    console.log("Speaking:", response);
+    const utterance = new SpeechSynthesisUtterance(response);
+    utterance.onend = function() {
         setGif('https://i.ibb.co/R9Lxd4W/Default-photo.jpg');
         recognition.start(); // Restart recognition after speaking
     };
+    window.speechSynthesis.speak(utterance);
+}
+
+function handleSpeechError(event) {
+    if (event.error === 'no-speech') {
+        setGif('https://i.ibb.co/dLKr4Mk/Error.gif');
+        startSpeechRecognition();
+    }
 }
 
 function trimMessages() {
