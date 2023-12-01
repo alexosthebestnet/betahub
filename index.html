@@ -58,157 +58,152 @@
     <script src="https://code.responsivevoice.org/responsivevoice.js"></script>
     <script>
         let listeningForCommand = false;
-        let lastTranscript = '';
-        const wakeWord = "hey hub";
-        const recognition = new webkitSpeechRecognition();
-        const silenceDelay = 2000; // 2 seconds
-        let silenceTimer;
-        let messages = [];
-        const maxMessages = 8; // Maximum number of messages to keep
+let lastTranscript = '';
+const wakeWord = "hey hub";
+const recognition = new webkitSpeechRecognition();
+const silenceDelay = 2000; // 2 seconds
+let silenceTimer;
+let messages = [];
+const maxMessages = 8; // Maximum number of messages to keep
 
-        window.onload = function() {
-            const savedMessages = localStorage.getItem('messages');
-            if (savedMessages) {
-                messages = JSON.parse(savedMessages);
+window.onload = function() {
+    const savedMessages = localStorage.getItem('messages');
+    if (savedMessages) {
+        messages = JSON.parse(savedMessages);
+    }
+    setGif('https://i.ibb.co/R9Lxd4W/Default-photo.jpg'); // Set default GIF
+};
+
+recognition.continuous = true;
+recognition.interimResults = true;
+recognition.lang = 'en-US';
+
+recognition.onresult = function(event) {
+    clearTimeout(silenceTimer);
+
+    const currentTranscript = Array.from(event.results)
+                                   .map(result => result[0].transcript)
+                                   .join('');
+
+    if (!listeningForCommand && currentTranscript.toLowerCase().includes(wakeWord)) {
+        listeningForCommand = true;
+        lastTranscript = '';
+        setGif('https://i.ibb.co/JkRhNz4/Listening.gif');
+        addSystemMessage();
+    } else if (listeningForCommand) {
+        lastTranscript = currentTranscript;
+        silenceTimer = setTimeout(() => {
+            const commandAfterWakeWord = lastTranscript.substring(lastTranscript.toLowerCase().indexOf(wakeWord) + wakeWord.length).trim();
+            if (commandAfterWakeWord) {
+                setGif('https://i.ibb.co/0CV9sYB/Thinking.gif');
+                sendCommandToAPI(commandAfterWakeWord);
+            } else {
+                setGif('https://i.ibb.co/Js4KZDw/Nothing-detected.gif');
             }
-            setGif('https://i.ibb.co/R9Lxd4W/Default-photo.jpg
-'); // Set default GIF
-        };
+            listeningForCommand = false;
+            recognition.stop(); // Stop recognition while processing the command
+        }, silenceDelay);
+    }
+};
 
-        recognition.continuous = true;
-        recognition.interimResults = true;
-        recognition.lang = 'en-US';
+recognition.onerror = function(event) {
+    if (event.error === 'no-speech') {
+        setGif('https://i.ibb.co/dLKr4Mk/Error.gif');
+        restartRecognition();
+    }
+};
 
-        recognition.onresult = function(event) {
-            clearTimeout(silenceTimer);
+recognition.start();
 
-            const currentTranscript = Array.from(event.results)
-                                           .map(result => result[0].transcript)
-                                           .join('');
+function addSystemMessage() {
+    const today = new Date().toLocaleDateString();
+    const systemMessage = `Today's date is ${today}. I am an AI assistant designed to respond to your voice commands.`;
+    messages.push({ role: 'system', content: systemMessage });
+    trimMessages();
+}
 
-            if (!listeningForCommand && currentTranscript.toLowerCase().includes(wakeWord)) {
-                listeningForCommand = true;
-                lastTranscript = '';
-                setGif('https://i.ibb.co/JkRhNz4/Listening.gif');
-                addSystemMessage();
-            } else if (listeningForCommand) {
-                lastTranscript = currentTranscript;
-                silenceTimer = setTimeout(() => {
-                    const commandAfterWakeWord = lastTranscript.substring(lastTranscript.toLowerCase().indexOf(wakeWord) + wakeWord.length).trim();
-                    if (commandAfterWakeWord) {
-                        setGif('https://i.ibb.co/0CV9sYB/Thinking.gif
-');
-                        sendCommandToAPI(commandAfterWakeWord);
-                    } else {
-                        setGif('https://i.ibb.co/Js4KZDw/Nothing-detected.gif
-');
-                    }
-                    listeningForCommand = false;
-                    recognition.stop(); // Stop recognition while processing the command
-                }, silenceDelay);
-            }
-        };
+function sendCommandToAPI(command) {
+    console.log("Sending command to API:", command);
+    messages.push({ role: 'user', content: command });
+    trimMessages();
 
-        recognition.onerror = function(event) {
-            if (event.error === 'no-speech') {
-                setGif('https://i.ibb.co/dLKr4Mk/Error.gif
-');
-                restartRecognition();
-            }
-        };
+    fetch("https://api.deepinfra.com/v1/openai/chat/completions", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer HnO6SXFKeKem8tkzRo8f8LAbeWL42F6h" // Your API key
+        },
+        body: JSON.stringify({
+            "model": "mistralai/Mistral-7B-Instruct-v0.1",
+            "messages": messages
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        const reply = data.choices[0].message.content;
+        console.log("API Response:", reply);
+        messages.push({ role: 'assistant', content: reply });
+        trimMessages();
+        speakResponse(reply);
+        saveMessages();
+    })
+    .catch(error => {
+        console.error("API Error:", error.message);
+        setGif('https://i.ibb.co/dLKr4Mk/Error.gif');
+        document.getElementById('status').textContent = error.message;
+    });
+}
 
+function trimMessages() {
+    if (messages.length > maxMessages) {
+        messages = messages.slice(-maxMessages); // Keep only the last 'maxMessages' messages
+    }
+}
+
+function saveMessages() {
+    localStorage.setItem('messages', JSON.stringify(messages));
+}
+
+function speakResponse(response) {
+    console.log("Speaking:", response);
+    setGif('https://i.ibb.co/ftsz0Xx/Responding.gif');
+    responsiveVoice.speak(response, "UK English Male", {
+        onend: function() {
+            setGif('https://i.ibb.co/R9Lxd4W/Default-photo.jpg');
+            recognition.start(); // Restart recognition after speaking
+        }
+    });
+}
+
+function setGif(gifPath) {
+    document.getElementById('statusGif').src = gifPath;
+}
+
+function toggleMenu() {
+    document.getElementById('menu').style.display = 'block';
+}
+
+function sleepMode() {
+    setGif('https://i.ibb.co/sgZn6nz/IMG-6440.jpg');
+    closeMenu();
+}
+
+function closeMenu() {
+    document.getElementById('menu').style.display = 'none';
+}
+
+function restartRecognition() {
+    recognition.stop();
+    setTimeout(() => {
         recognition.start();
+    }, 1000);
+}
 
-        function addSystemMessage() {
-            const today = new Date().toLocaleDateString();
-            const systemMessage = `Today's date is ${today}. I am an AI assistant designed to respond to your voice commands.`;
-            messages.push({ role: 'system', content: systemMessage });
-            trimMessages();
-        }
-
-        function sendCommandToAPI(command) {
-            console.log("Sending command to API:", command);
-            messages.push({ role: 'user', content: command });
-            trimMessages();
-
-            fetch("https://api.deepinfra.com/v1/openai/chat/completions", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": "Bearer HnO6SXFKeKem8tkzRo8f8LAbeWL42F6h" // Your API key
-                },
-                body: JSON.stringify({
-                    "model": "mistralai/Mistral-7B-Instruct-v0.1",
-                    "messages": messages
-                })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                const reply = data.choices[0].message.content;
-                console.log("API Response:", reply);
-                messages.push({ role: 'assistant', content: reply });
-                trimMessages();
-                speakResponse(reply);
-                saveMessages();
-            })
-            .catch(error => {
-                console.error("API Error:", error.message);
-                setGif('https://i.ibb.co/dLKr4Mk/Error.gif
-');
-                document.getElementById('status').textContent = error.message;
-            });
-        }
-
-        function trimMessages() {
-            if (messages.length > maxMessages) {
-                messages = messages.slice(-maxMessages); // Keep only the last 'maxMessages' messages
-            }
-        }
-
-        function saveMessages() {
-            localStorage.setItem('messages', JSON.stringify(messages));
-        }
-
-        function speakResponse(response) {
-            console.log("Speaking:", response);
-            setGif('path_to_speaking_gif.gif');
-            responsiveVoice.speak(response, "UK English Male", {
-                onend: function() {
-                    setGif('https://i.ibb.co/ftsz0Xx/Responding.gif
-');
-                    recognition.start(); // Restart recognition after speaking
-                }
-            });
-        }
-
-        function setGif(gifPath) {
-            document.getElementById('statusGif').src = gifPath;
-        }
-
-        function toggleMenu() {
-            document.getElementById('menu').style.display = 'block';
-        }
-
-        function sleepMode() {
-            setGif('https://i.ibb.co/sgZn6nz/IMG-6440.jpg');
-            closeMenu();
-        }
-
-        function closeMenu() {
-            document.getElementById('menu').style.display = 'none';
-        }
-
-        function restartRecognition() {
-            recognition.stop();
-            setTimeout(() => {
-                recognition.start();
-            }, 1000);
-        }
     </script>
 </body>
 </html>
