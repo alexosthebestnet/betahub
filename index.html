@@ -99,7 +99,7 @@ function handleSpeechResult(event) {
 
     if (currentTranscript.toLowerCase().includes(wakeWord)) {
         if (listeningForCommand) {
-            window.speechSynthesis.cancel(); // Stop current speech synthesis
+            responsiveVoice.cancel(); // Stop current speech synthesis
         }
         listeningForCommand = true;
         setGif('https://i.ibb.co/JkRhNz4/Listening.gif');
@@ -134,7 +134,7 @@ function sendCommandToAPI(command) {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
-            "Authorization": "Bearer HnO6SXFKeKem8tkzRo8f8LAbeWL42F6h" // Replace with your actual DeepInfra API key
+            "Authorization": "Bearer HnO6SXFKeKem8tkzRo8f8LAbeWL42F6h"
         },
         body: JSON.stringify({
             "model": "mistralai/Mistral-7B-Instruct-v0.1",
@@ -158,12 +158,13 @@ function sendCommandToAPI(command) {
 
 function speakResponse(response) {
     console.log("Speaking:", response);
-    const utterance = new SpeechSynthesisUtterance(response);
-    utterance.onend = function() {
-        setGif('https://i.ibb.co/R9Lxd4W/Default-photo.jpg');
-        recognition.start(); // Restart recognition after speaking
-    };
-    window.speechSynthesis.speak(utterance);
+    setGif('https://i.ibb.co/ftsz0Xx/Responding.gif');
+    responsiveVoice.speak(response, "UK English Male", {
+        onend: function() {
+            setGif('https://i.ibb.co/R9Lxd4W/Default-photo.jpg');
+            recognition.start(); // Restart recognition after speaking
+        }
+    });
 }
 
 function handleSpeechError(event) {
@@ -206,7 +207,6 @@ function restartRecognition() {
         recognition.start();
     }, 1000);
 }
-
 
     </script>
 </body>
