@@ -65,31 +65,23 @@ const silenceDelay = 2000; // 2 seconds
 let silenceTimer;
 let messages = [];
 const maxMessages = 8; // Maximum number of messages to keep
-let checkRecognitionInterval;
 
 window.onload = function() {
+    initializeSpeechRecognition();
     const savedMessages = localStorage.getItem('messages');
     if (savedMessages) {
         messages = JSON.parse(savedMessages);
     }
     setGif('https://i.ibb.co/R9Lxd4W/Default-photo.jpg'); // Set default GIF
-    startSpeechRecognition();
-    checkRecognitionInterval = setInterval(checkSpeechRecognition, 3000);
 };
 
-function startSpeechRecognition() {
+function initializeSpeechRecognition() {
     recognition.continuous = true;
     recognition.interimResults = true;
     recognition.lang = 'en-US';
-    recognition.start();
     recognition.onresult = handleSpeechResult;
     recognition.onerror = handleSpeechError;
-}
-
-function checkSpeechRecognition() {
-    if (!recognition.continuous) {
-        startSpeechRecognition();
-    }
+    recognition.start();
 }
 
 function handleSpeechResult(event) {
@@ -162,7 +154,7 @@ function speakResponse(response) {
     responsiveVoice.speak(response, "UK English Male", {
         onend: function() {
             setGif('https://i.ibb.co/R9Lxd4W/Default-photo.jpg');
-            recognition.start(); // Restart recognition after speaking
+            initializeSpeechRecognition(); // Restart recognition after speaking
         }
     });
 }
@@ -170,7 +162,7 @@ function speakResponse(response) {
 function handleSpeechError(event) {
     if (event.error === 'no-speech') {
         setGif('https://i.ibb.co/dLKr4Mk/Error.gif');
-        startSpeechRecognition();
+        initializeSpeechRecognition();
     }
 }
 
