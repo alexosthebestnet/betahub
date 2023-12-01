@@ -93,24 +93,23 @@ function checkSpeechRecognition() {
 }
 
 function handleSpeechResult(event) {
-    clearTimeout(silenceTimer);
-
     const currentTranscript = Array.from(event.results)
                                    .map(result => result[0].transcript)
                                    .join('');
 
     if (currentTranscript.toLowerCase().includes(wakeWord)) {
         if (listeningForCommand) {
-            responsiveVoice.cancel(); // Stop current speech
+            // Stop current speech synthesis
+            responsiveVoice.cancel();
         }
         listeningForCommand = true;
-        lastTranscript = '';
         setGif('https://i.ibb.co/JkRhNz4/Listening.gif');
-        addSystemMessage();
-    } else if (listeningForCommand) {
-        lastTranscript = currentTranscript;
+    }
+
+    if (listeningForCommand) {
+        clearTimeout(silenceTimer);
         silenceTimer = setTimeout(() => {
-            processCommand(lastTranscript);
+            processCommand(currentTranscript);
         }, silenceDelay);
     }
 }
