@@ -3,24 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wake Word Detection</title>
+    <title>Voice Assistant</title>
     <style>
-        body {
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
             font-family: Arial, sans-serif;
-            text-align: center;
-            padding: 20px;
         }
 
-        #status {
-            color: green;
+        .background {
+            width: 100%;
+            height: 100%;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: -1;
+        }
+
+        .background img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .menu {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .menu p, .menu button {
+            margin: 10px 0;
         }
     </style>
 </head>
-    <script src="https://code.responsivevoice.org/responsivevoice.js?key=74a2wYAJ"></script>
 <body>
-    <h1>Wake Word Detection Demo</h1>
-    <p id="status">Listening for the wake word...</p>
+    <div id="background" class="background" onclick="toggleMenu()">
+        <img id="statusGif" src="path_to_default_gif.gif" alt="Status">
+    </div>
+    <div id="menu" class="menu">
+        <p>Email: support@example.com</p>
+        <button onclick="sleepMode()">Sleep Mode</button>
+        <button onclick="closeMenu()">Close</button>
+    </div>
 
+    <script src="https://code.responsivevoice.org/responsivevoice.js"></script>
     <script>
         let listeningForCommand = false;
         let lastTranscript = '';
@@ -36,6 +70,7 @@
             if (savedMessages) {
                 messages = JSON.parse(savedMessages);
             }
+            setGif('path_to_default_gif.gif'); // Set default GIF
         };
 
         recognition.continuous = true;
@@ -52,16 +87,28 @@
             if (!listeningForCommand && currentTranscript.toLowerCase().includes(wakeWord)) {
                 listeningForCommand = true;
                 lastTranscript = '';
-                document.getElementById('status').textContent = "Listening for command...";
+                setGif('path_to_listening_gif.gif');
                 addSystemMessage();
             } else if (listeningForCommand) {
                 lastTranscript = currentTranscript;
                 silenceTimer = setTimeout(() => {
                     const commandAfterWakeWord = lastTranscript.substring(lastTranscript.toLowerCase().indexOf(wakeWord) + wakeWord.length).trim();
-                    sendCommandToAPI(commandAfterWakeWord);
+                    if (commandAfterWakeWord) {
+                        setGif('path_to_processing_gif.gif');
+                        sendCommandToAPI(commandAfterWakeWord);
+                    } else {
+                        setGif('path_to_no_input_gif.gif');
+                    }
                     listeningForCommand = false;
                     recognition.stop(); // Stop recognition while processing the command
                 }, silenceDelay);
+            }
+        };
+
+        recognition.onerror = function(event) {
+            if (event.error === 'no-speech') {
+                setGif('path_to_error_gif.gif');
+                restartRecognition();
             }
         };
 
@@ -104,7 +151,11 @@
                 speakResponse(reply);
                 saveMessages();
             })
-            .catch(error => console.error("API Error:", error.message));
+            .catch(error => {
+                console.error("API Error:", error.message);
+                setGif('path_to_error_gif.gif');
+                document.getElementById('status').textContent = error.message;
+            });
         }
 
         function trimMessages() {
@@ -118,20 +169,39 @@
         }
 
         function speakResponse(response) {
-    console.log("Speaking:", response);
-    responsiveVoice.speak(response, "UK English Male", {
-        onend: function() {
-            recognition.start(); // Restart recognition after speaking
+            console.log("Speaking:", response);
+            setGif('path_to_speaking_gif.gif');
+            responsiveVoice.speak(response, "UK English Male", {
+                onend: function() {
+                    setGif('path_to_default_gif.gif');
+                    recognition.start(); // Restart recognition after speaking
+                }
+            });
         }
-    });
-    document.getElementById('status').textContent = "Listening for the wake word...";
-}
 
-        recognition.onend = function() {
-            if (!listeningForCommand) {
-                recognition.start(); // Restart recognition if not actively listening for a command
-            }
-        };
+        function setGif(gifPath) {
+            document.getElementById('statusGif').src = gifPath;
+        }
+
+        function toggleMenu() {
+            document.getElementById('menu').style.display = 'block';
+        }
+
+        function sleepMode() {
+            setGif('path_to_sleep_gif.gif');
+            closeMenu();
+        }
+
+        function closeMenu() {
+            document.getElementById('menu').style.display = 'none';
+        }
+
+        function restartRecognition() {
+            recognition.stop();
+            setTimeout(() => {
+                recognition.start();
+            }, 1000);
+        }
     </script>
 </body>
 </html>
