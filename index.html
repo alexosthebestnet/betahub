@@ -61,7 +61,7 @@
 let lastTranscript = '';
 const wakeWord = "hey hub";
 const recognition = new webkitSpeechRecognition();
-const silenceDelay = 2000; // 2 seconds
+const silenceDelay = 2500; // 2.5 seconds
 let silenceTimer;
 let messages = [];
 const maxMessages = 8; // Maximum number of messages to keep
@@ -203,6 +203,19 @@ function restartRecognition() {
         recognition.start();
     }, 1000);
 }
+        function checkAndRestartRecognition() {
+    if (!recognition || recognition.state !== 'running') {
+        try {
+            recognition.start();
+        } catch (error) {
+            console.error("Error restarting recognition:", error);
+            setGif('https://i.ibb.co/dLKr4Mk/Error.gif'); // Show error GIF
+        }
+    }
+}
+
+// Set an interval to check recognition status every 5 seconds
+setInterval(checkAndRestartRecognition, 5000);
 
     </script>
 </body>
