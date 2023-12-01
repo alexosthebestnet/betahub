@@ -16,6 +16,7 @@
         }
     </style>
 </head>
+    <script src="https://code.responsivevoice.org/responsivevoice.js?key=74a2wYAJ"></script>
 <body>
     <h1>Wake Word Detection Demo</h1>
     <p id="status">Listening for the wake word...</p>
@@ -117,17 +118,14 @@
         }
 
         function speakResponse(response) {
-            console.log("Speaking:", response);
-            if (window.speechSynthesis.speaking) {
-                window.speechSynthesis.cancel(); // Cancel any ongoing speech
-            }
-            const utterance = new SpeechSynthesisUtterance(response);
-            utterance.onend = function() {
-                recognition.start(); // Restart recognition after speaking
-            };
-            window.speechSynthesis.speak(utterance);
-            document.getElementById('status').textContent = "Listening for the wake word...";
+    console.log("Speaking:", response);
+    responsiveVoice.speak(response, "UK English Male", {
+        onend: function() {
+            recognition.start(); // Restart recognition after speaking
         }
+    });
+    document.getElementById('status').textContent = "Listening for the wake word...";
+}
 
         recognition.onend = function() {
             if (!listeningForCommand) {
