@@ -46,7 +46,8 @@
 </head>
 <body>
     <div id="background" class="background" onclick="toggleMenu()">
-        <img id="statusGif" src="path_to_default_gif.gif" alt="Status">
+        <img id="statusGif" src="https://i.ibb.co/R9Lxd4W/Default-photo.jpg
+" alt="Status">
     </div>
     <div id="menu" class="menu">
         <p>Email: support@example.com</p>
@@ -70,7 +71,8 @@
             if (savedMessages) {
                 messages = JSON.parse(savedMessages);
             }
-            setGif('path_to_default_gif.gif'); // Set default GIF
+            setGif('https://i.ibb.co/R9Lxd4W/Default-photo.jpg
+'); // Set default GIF
         };
 
         recognition.continuous = true;
@@ -87,17 +89,19 @@
             if (!listeningForCommand && currentTranscript.toLowerCase().includes(wakeWord)) {
                 listeningForCommand = true;
                 lastTranscript = '';
-                setGif('path_to_listening_gif.gif');
+                setGif('https://i.ibb.co/JkRhNz4/Listening.gif');
                 addSystemMessage();
             } else if (listeningForCommand) {
                 lastTranscript = currentTranscript;
                 silenceTimer = setTimeout(() => {
                     const commandAfterWakeWord = lastTranscript.substring(lastTranscript.toLowerCase().indexOf(wakeWord) + wakeWord.length).trim();
                     if (commandAfterWakeWord) {
-                        setGif('path_to_processing_gif.gif');
+                        setGif('https://i.ibb.co/0CV9sYB/Thinking.gif
+');
                         sendCommandToAPI(commandAfterWakeWord);
                     } else {
-                        setGif('path_to_no_input_gif.gif');
+                        setGif('https://i.ibb.co/Js4KZDw/Nothing-detected.gif
+');
                     }
                     listeningForCommand = false;
                     recognition.stop(); // Stop recognition while processing the command
@@ -107,7 +111,8 @@
 
         recognition.onerror = function(event) {
             if (event.error === 'no-speech') {
-                setGif('path_to_error_gif.gif');
+                setGif('https://i.ibb.co/dLKr4Mk/Error.gif
+');
                 restartRecognition();
             }
         };
@@ -153,7 +158,8 @@
             })
             .catch(error => {
                 console.error("API Error:", error.message);
-                setGif('path_to_error_gif.gif');
+                setGif('https://i.ibb.co/dLKr4Mk/Error.gif
+');
                 document.getElementById('status').textContent = error.message;
             });
         }
@@ -173,7 +179,8 @@
             setGif('path_to_speaking_gif.gif');
             responsiveVoice.speak(response, "UK English Male", {
                 onend: function() {
-                    setGif('path_to_default_gif.gif');
+                    setGif('https://i.ibb.co/ftsz0Xx/Responding.gif
+');
                     recognition.start(); // Restart recognition after speaking
                 }
             });
@@ -188,7 +195,7 @@
         }
 
         function sleepMode() {
-            setGif('path_to_sleep_gif.gif');
+            setGif('https://i.ibb.co/sgZn6nz/IMG-6440.jpg');
             closeMenu();
         }
 
