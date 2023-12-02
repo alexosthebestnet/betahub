@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+  <link rel="manifest" href="https://raw.githubusercontent.com/alexosthebestnet/AirparrotHUB/main/applewebapp.json">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -26,6 +27,19 @@
             height: 100%;
             object-fit: cover;
         }
+      /* Add this to your existing style tag */
+#info-widgets {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    text-align: right;
+}
+
+#info-widgets p {
+    margin: 5px;
+    color: white; /* or any color you prefer */
+}
+
 
         .menu {
             display: none;
@@ -54,101 +68,94 @@
         <button onclick="sleepMode()">Sleep Mode</button>
         <button onclick="closeMenu()">Close</button>
     </div>
+  <!-- Add this inside your body tag -->
+<div id="info-widgets">
+    <p id="time"></p>
+    <p id="date"></p>
+    <!-- Add more widgets here -->
+</div>
 
-    <script src="https://code.responsivevoice.org/responsivevoice.js"></script>
+
+   <script src="https://code.responsivevoice.org/responsivevoice.js?key=74a2wYAJ"></script>
     <script>
-        window.onload = function() {
+        let listeningForCommand = false;
+let lastTranscript = '';
+const wakeWord = "jarvis";
+const recognition = new webkitSpeechRecognition();
+const silenceDelay = 2000; // 2 seconds
+let silenceTimer;
+let messages = [];
+const maxMessages = 8; // Maximum number of messages to keep
+
+// Array of commands and corresponding actions
+const commandActions = [
+    { 
+        command: "weather", 
+        action: fetchWeather 
+        // Add more commands and their corresponding actions here
+    },
+    // ... other command-action pairs
+];
+
+function fetchWeather() {
+    // Placeholder for weather fetching logic
+    console.log("Fetching weather data...");
+    // Implement the logic to fetch and display weather data here
+}
+
+window.onload = function() {
     const savedMessages = localStorage.getItem('messages');
     if (savedMessages) {
         messages = JSON.parse(savedMessages);
     }
     setGif('https://i.ibb.co/R9Lxd4W/Default-photo.jpg'); // Set default GIF
+    updateDateTime(); // Initialize date and time
 };
-
-const wakeWord = "hey hub";
-const silenceDelay = 2000; // 2 seconds
-let listeningForCommand = false;
-let lastTranscript = '';
-let messages = [];
-const maxMessages = 8; // Maximum number of messages to keep
-
-// Speech Recognition Setup
-let recognition;
-if ('webkitSpeechRecognition' in window) {
-    recognition = new webkitSpeechRecognition();
-} else {
-    alert('Speech recognition not supported in this browser. Please use Chrome or Firefox.');
-    return;
-}
 
 recognition.continuous = true;
 recognition.interimResults = true;
 recognition.lang = 'en-US';
 
-// Handling the recognition results
 recognition.onresult = function(event) {
-    processSpeechRecognitionResult(event);
+    clearTimeout(silenceTimer);
+
+    const currentTranscript = Array.from(event.results)
+                                   .map(result => result[0].transcript)
+                                   .join('');
+
+    if (!listeningForCommand && currentTranscript.toLowerCase().includes(wakeWord)) {
+        listeningForCommand = true;
+        lastTranscript = '';
+        setGif('https://i.ibb.co/JkRhNz4/Listening.gif');
+        addSystemMessage();
+    } else if (listeningForCommand) {
+        lastTranscript = currentTranscript;
+        silenceTimer = setTimeout(() => {
+            const commandAfterWakeWord = lastTranscript.substring(lastTranscript.toLowerCase().indexOf(wakeWord) + wakeWord.length).trim();
+            if (commandAfterWakeWord) {
+                setGif('https://i.ibb.co/0CV9sYB/Thinking.gif');
+                sendCommandToAPI(commandAfterWakeWord);
+            } else {
+                setGif('https://i.ibb.co/Js4KZDw/Nothing-detected.gif');
+            }
+            listeningForCommand = false;
+            recognition.stop(); // Stop recognition while processing the command
+        }, silenceDelay);
+    }
 };
 
-// Error handling for the recognition
 recognition.onerror = function(event) {
-    alert('Recognition error: ' + event.error);
-    restartRecognition();
+    if (event.error === 'no-speech') {
+        setGif('https://i.ibb.co/dLKr4Mk/Error.gif');
+        restartRecognition();
+    }
 };
 
 recognition.start();
 
-// Function to process speech recognition result
-function processSpeechRecognitionResult(event) {
-    clearTimeout(silenceTimer);
-    const currentTranscript = Array.from(event.results).map(result => result[0].transcript).join('');
-    if (!listeningForCommand && currentTranscript.toLowerCase().includes(wakeWord)) {
-        activateListeningMode(currentTranscript);
-    } else if (listeningForCommand) {
-        processListeningMode(currentTranscript);
-    }
-}
-
-// Activating listening mode
-function activateListeningMode(currentTranscript) {
-    listeningForCommand = true;
-    lastTranscript = '';
-    setGif('https://i.ibb.co/JkRhNz4/Listening.gif');
-    addSystemMessage();
-}
-
-// Processing listening mode
-function processListeningMode(currentTranscript) {
-    lastTranscript = currentTranscript;
-    silenceTimer = setTimeout(() => {
-        processCommand();
-    }, silenceDelay);
-}
-
-// Processing the command after silence
-function processCommand() {
-    const commandAfterWakeWord = lastTranscript.substring(lastTranscript.toLowerCase().indexOf(wakeWord) + wakeWord.length).trim();
-    if (commandAfterWakeWord) {
-        setGif('https://i.ibb.co/0CV9sYB/Thinking.gif');
-        sendCommandToAPI(commandAfterWakeWord);
-    } else {
-        setGif('https://i.ibb.co/Js4KZDw/Nothing-detected.gif');
-    }
-    listeningForCommand = false;
-    recognition.stop(); // Stop recognition while processing the command
-}
-
-// Restarting the speech recognition
-function restartRecognition() {
-    recognition.stop();
-    setTimeout(() => {
-        recognition.start();
-    }, 1000);
-}
-
 function addSystemMessage() {
     const today = new Date().toLocaleDateString();
-    const systemMessage = `Today's date is ${today}. I am an AI assistant designed to respond to your voice commands.`;
+    const systemMessage = `Today's date is ${today}. You are JARVIS from iron man you are a the Vancouver island school of innovation and inquiry call users sir and be polite and help students. VISII is an inquiry based learning school . Call us sir and be like JARVIS. you were made by 11 year old alex rose. Respond short and concise addressing students as sir instead of sure use certainly. sprinkle some humor in to your answers and be funny respond max of 30 words `;
     messages.push({ role: 'system', content: systemMessage });
     trimMessages();
 }
@@ -158,12 +165,11 @@ function sendCommandToAPI(command) {
     messages.push({ role: 'user', content: command });
     trimMessages();
 
-    // Replace the URL and Authorization token with your API's details
     fetch("https://api.deepinfra.com/v1/openai/chat/completions", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
-            "Authorization": "Bearer YOUR_API_KEY" 
+            "Authorization": "Bearer HnO6SXFKeKem8tkzRo8f8LAbeWL42F6h" // Your API key
         },
         body: JSON.stringify({
             "model": "mistralai/Mistral-7B-Instruct-v0.1",
@@ -187,6 +193,7 @@ function sendCommandToAPI(command) {
     .catch(error => {
         console.error("API Error:", error.message);
         setGif('https://i.ibb.co/dLKr4Mk/Error.gif');
+        document.getElementById('status').textContent = error.message;
     });
 }
 
@@ -202,10 +209,25 @@ function saveMessages() {
 
 function speakResponse(response) {
     console.log("Speaking:", response);
-    setGif('https://i.ibb.co/ftsz0Xx/Responding.gif');
-    responsiveVoice.speak(response, "UK English Male", {
+
+    // Default responding GIF
+    let gifToUse = 'https://i.ibb.co/ftsz0Xx/Responding.gif'; 
+
+    // Check for command keywords in the response
+    commandActions.forEach(item => {
+        if (response.toLowerCase().includes(item.command)) {
+            item.action(); // Run the associated action
+            response = response.replace(item.command, ''); // Remove command from response
+            gifToUse = 'https://example.com/running-code.gif'; // GIF for running code
+        }
+    });
+
+    setGif(gifToUse); // Set the GIF based on the detected command
+
+    responsiveVoice.speak(response, "Fallback UK Female", {
         onend: function() {
             setGif('https://i.ibb.co/R9Lxd4W/Default-photo.jpg');
+            listeningForCommand = false; // Set this to false to allow for wake word detection
             recognition.start(); // Restart recognition after speaking
         }
     });
@@ -227,6 +249,29 @@ function sleepMode() {
 function closeMenu() {
     document.getElementById('menu').style.display = 'none';
 }
+
+function restartRecognition() {
+    recognition.stop();
+    setTimeout(() => {
+        recognition.start();
+    }, 1000);
+}
+
+// Additional code to update time, date, and other information
+function updateDateTime() {
+    const now = new Date();
+    document.getElementById('time').textContent = now.toLocaleTimeString();
+    document.getElementById('date').textContent = now.toLocaleDateString();
+    // Add more dynamic updates here
+}
+
+// Call updateDateTime every second
+setInterval(updateDateTime, 1000);
+
+      recognition.onend = function() {
+    // Automatically restart recognition when it stops
+    restartRecognition();
+};
 
     </script>
 </body>
