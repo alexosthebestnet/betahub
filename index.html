@@ -80,7 +80,7 @@
     <script>
         let listeningForCommand = false;
 let lastTranscript = '';
-const wakeWord = "jarvis";
+const wakeWord = "hey hub";
 const recognition = new webkitSpeechRecognition();
 const silenceDelay = 2000; // 2 seconds
 let silenceTimer;
@@ -224,7 +224,7 @@ function speakResponse(response) {
 
     setGif(gifToUse); // Set the GIF based on the detected command
 
-    responsiveVoice.speak(response, "Fallback UK Female", {
+    responsiveVoice.speak(response, "Australian Male", {
         onend: function() {
             setGif('https://i.ibb.co/R9Lxd4W/Default-photo.jpg');
             listeningForCommand = false; // Set this to false to allow for wake word detection
