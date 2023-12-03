@@ -75,7 +75,7 @@
 </div>
 
 <script src="shake.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
+<script src="https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/dist/face-api.js"></script>
  <script src="https://code.responsivevoice.org/responsivevoice.js?key=74a2wYAJ"></script>
     <script>
         let listeningForCommand = false;
@@ -130,8 +130,8 @@ window.onload = function() {
     const savedMessages = localStorage.getItem('messages');
     if (savedMessages) {
         messages = JSON.parse(savedMessages);
-        initShakeDetection();
-      loadModels();
+       loadModels();
+        initShakeDetection()
     }
     setGif('https://i.ibb.co/WxbwbD1/Normal-gif.gif'); // Set default GIF
     updateDateTime(); // Initialize date and time
@@ -324,13 +324,25 @@ async function loadModels() {
 }
 
 function startVideo() {
-    navigator.mediaDevices.getUserMedia({ video: {} })
-        .then(stream => {
-            const video = document.getElementById('videoElement');
-            video.srcObject = stream;
-        })
-        .catch(err => console.error("Error accessing video stream:", err));
+    const video = document.getElementById('videoElement');
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({ video: {} })
+            .then(stream => {
+                video.srcObject = stream;
+                video.onloadedmetadata = () => {
+                    video.play();
+                    recognizeFaces(); // Start face recognition after the video starts
+                };
+            })
+            .catch(err => {
+                console.error("Error accessing video stream:", err);
+                alert('Unable to access the camera: ' + err.message);
+            });
+    } else {
+        alert('getUserMedia not supported on your browser!');
+    }
 }
+
 
 async function recognizeFaces() {
     const video = document.getElementById('videoElement');
