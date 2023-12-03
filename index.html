@@ -94,7 +94,11 @@ const commandActions = [
         action: fetchWeather,
         gif: 'https://i.ibb.co/gRSdL49/Weather-Plug-in-gif.gif' // GIF for the weather command
     },
-    // Add more commands, actions, and GIFs here
+    { 
+        command: "joke", 
+        action: tellJoke,
+        gif: 'https://i.ibb.co/album/XYZ123/Joke-Plugin.gif' // GIF for the joke command
+    },
 ];
 
 function fetchWeather() {
@@ -102,6 +106,25 @@ function fetchWeather() {
     console.log("Fetching weather data...");
     // Implement the logic to fetch and display weather data here
 }
+      
+const jokes = [
+    "Why don't scientists trust atoms? Because they make up everything!",
+    "Why did the scarecrow win an award? Because he was outstanding in his field!",
+    "I'm reading a book on anti-gravity. It's impossible to put down!",
+    "Parallel lines have so much in common. It’s a shame they’ll never meet.",
+    "My boss told me to have a good day. So, I went home.",
+    "Why don't eggs tell jokes? They'd crack each other up.",
+    "I'd tell you a chemistry joke but I know I wouldn't get a reaction.",
+    "Why did the bicycle collapse? It was two-tired!",
+    "Did you hear about the mathematician who’s afraid of negative numbers? He'll stop at nothing to avoid them.",
+    "Why don't programmers like nature? It has too many bugs."
+];
+
+function tellJoke() {
+    const randomIndex = Math.floor(Math.random() * jokes.length);
+    return jokes[randomIndex];
+}
+
 
 window.onload = function() {
     const savedMessages = localStorage.getItem('messages');
