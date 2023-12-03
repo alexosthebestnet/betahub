@@ -75,6 +75,7 @@
 </div>
 
 <script src="shake.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
  <script src="https://code.responsivevoice.org/responsivevoice.js?key=74a2wYAJ"></script>
     <script>
         let listeningForCommand = false;
@@ -107,6 +108,7 @@ window.onload = function() {
     if (savedMessages) {
         messages = JSON.parse(savedMessages);
         initShakeDetection();
+      loadModels();
     }
     setGif('https://i.ibb.co/WxbwbD1/Normal-gif.gif'); // Set default GIF
     updateDateTime(); // Initialize date and time
@@ -291,6 +293,77 @@ function updateDateTime() {
     document.getElementById('date').textContent = now.toLocaleDateString();
     // Add more dynamic updates here
 }
+async function loadModels() {
+    await faceapi.nets.faceRecognitionNet.loadFromUri('/models');
+    await faceapi.nets.faceLandmark68Net.loadFromUri('/models');
+    await faceapi.nets.ssdMobilenetv1.loadFromUri('/models');
+    startVideo();
+}
+
+function startVideo() {
+    navigator.mediaDevices.getUserMedia({ video: {} })
+        .then(stream => {
+            const video = document.getElementById('videoElement');
+            video.srcObject = stream;
+        })
+        .catch(err => console.error("Error accessing video stream:", err));
+}
+
+async function recognizeFaces() {
+    const video = document.getElementById('videoElement');
+    const displaySize = { width: video.width, height: video.height };
+    faceapi.matchDimensions(video, displaySize);
+
+    const labeledFaceDescriptors = await loadLabeledFaces();
+    const faceMatcher = new faceapi.FaceMatcher(labeledFaceDescriptors, 0.6);
+
+    setInterval(async () => {
+        const detections = await faceapi.detectAllFaces(video).withFaceLandmarks().withFaceDescriptors();
+        const resizedDetections = faceapi.resizeResults(detections, displaySize);
+
+        resizedDetections.forEach(detection => {
+            const bestMatch = faceMatcher.findBestMatch(detection.descriptor);
+            if (bestMatch.label === "unknown") {
+                startListeningForName(detection.descriptor);
+            } else {
+                greetUser(bestMatch.label);
+            }
+        });
+    }, 100);
+}
+
+async function loadLabeledFaces() {
+    const faces = JSON.parse(localStorage.getItem('faces')) || {};
+    return Object.keys(faces).map(name => new faceapi.LabeledFaceDescriptors(name, [new Float32Array(faces[name])]));
+}
+
+function startListeningForName(descriptor) {
+    // Start your speech recognition system here
+    // On recognition success, call `processName`
+    const name = listenForName(); // Replace with your voice recognition logic
+    processName(name, descriptor);
+}
+
+function processName(name, descriptor) {
+    if (name) {
+        saveFaceData(name, Array.from(descriptor));
+        greetUser(name);
+    }
+}
+
+function saveFaceData(name, descriptor) {
+    const faces = JSON.parse(localStorage.getItem('faces')) || {};
+    faces[name] = descriptor;
+    localStorage.setItem('faces', JSON.stringify(faces));
+}
+
+function greetUser(name) {
+    console.log(`Hello, ${name}! Welcome back.`);
+    // You can use your voice synthesis system to vocally greet the user
+}
+
+loadModels();
+recognizeFaces();
 
 // Call updateDateTime every second
 setInterval(updateDateTime, 1000);
