@@ -110,7 +110,19 @@ window.onload = function() {
     }
     setGif('https://i.ibb.co/R9Lxd4W/Default-photo.jpg'); // Set default GIF
     updateDateTime(); // Initialize date and time
+
+    // Speak a greeting message
+    responsiveVoice.speak("Hello, welcome back!", "Australian Male", {
+        onstart: function() {
+            // You can set a specific GIF for the greeting here if you like
+            setGif('https://example.com/greeting.gif');
+        },
+        onend: function() {
+            setGif('https://i.ibb.co/R9Lxd4W/Default-photo.jpg');
+        }
+    });
 };
+
 
 recognition.continuous = true;
 recognition.interimResults = true;
