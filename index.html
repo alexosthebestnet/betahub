@@ -91,10 +91,10 @@ const maxMessages = 25; // Maximum number of messages to keep
 const commandActions = [
     { 
         command: "weather", 
-        action: fetchWeather 
-        // Add more commands and their corresponding actions here
+        action: fetchWeather,
+        gif: 'https://example.com/weather.gif' // GIF for the weather command
     },
-    // ... other command-action pairs
+    // Add more commands, actions, and GIFs here
 ];
 
 function fetchWeather() {
@@ -208,30 +208,28 @@ function saveMessages() {
 }
 
 function speakResponse(response) {
-    console.log("Speaking:", response);
+    let gifToUse = 'https://i.ibb.co/ftsz0Xx/Responding.gif'; // Default responding GIF
+    let actionResponse = '';
 
-    // Default responding GIF
-    let gifToUse = 'https://i.ibb.co/ftsz0Xx/Responding.gif'; 
-
-    // Check for command keywords in the response
     commandActions.forEach(item => {
         if (response.toLowerCase().includes(item.command)) {
-            item.action(); // Run the associated action
-            response = response.replace(item.command, ''); // Remove command from response
-            gifToUse = 'https://example.com/running-code.gif'; // GIF for running code
+            actionResponse = item.action();
+            gifToUse = item.gif; // Set GIF from the commandActions array
         }
     });
 
-    setGif(gifToUse); // Set the GIF based on the detected command
+    const speechText = actionResponse || response;
 
-    responsiveVoice.speak(response, "Australian Male", {
+    setGif(gifToUse);
+    responsiveVoice.speak(speechText, "Australian Male", {
         onend: function() {
             setGif('https://i.ibb.co/R9Lxd4W/Default-photo.jpg');
-            listeningForCommand = false; // Set this to false to allow for wake word detection
-            recognition.start(); // Restart recognition after speaking
+            listeningForCommand = false;
+            recognition.start();
         }
     });
 }
+
 
 function setGif(gifPath) {
     document.getElementById('statusGif').src = gifPath;
