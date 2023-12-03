@@ -74,8 +74,8 @@
     <!-- Add more widgets here -->
 </div>
 
-
-   <script src="https://code.responsivevoice.org/responsivevoice.js?key=74a2wYAJ"></script>
+<script src="https://cdn.jsdelivr.net/npm/shake.js@0.2.4"></script>  
+ <script src="https://code.responsivevoice.org/responsivevoice.js?key=74a2wYAJ"></script>
     <script>
         let listeningForCommand = false;
 let lastTranscript = '';
@@ -106,6 +106,7 @@ window.onload = function() {
     const savedMessages = localStorage.getItem('messages');
     if (savedMessages) {
         messages = JSON.parse(savedMessages);
+        initShakeDetection();
     }
     setGif('https://i.ibb.co/WxbwbD1/Normal-gif.gif'); // Set default GIF
     updateDateTime(); // Initialize date and time
@@ -241,6 +242,17 @@ function speakResponse(response) {
     });
 }
 
+       function initShakeDetection() {
+            var shakeEvent = new Shake({ threshold: 15 });
+            shakeEvent.start();
+
+            window.addEventListener('shake', function() {
+                // Code to display dizzy GIF and play sound
+                setGif('path/to/dizzy.gif');
+                playSound('https://www.fesliyanstudios.com/soundeffects-download.php?id=7003');
+            }, false);
+        }
+
 
 function setGif(gifPath) {
     document.getElementById('statusGif').src = gifPath;
@@ -265,6 +277,12 @@ function restartRecognition() {
         recognition.start();
     }, 10);
 }
+       
+      
+      function playSound(soundPath) {
+            var audio = new Audio(soundPath);
+            audio.play();
+        }
 
 // Additional code to update time, date, and other information
 function updateDateTime() {
