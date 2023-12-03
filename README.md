@@ -1,5 +1,3 @@
-Beta Softwear for my airparrot robot
-
 Supported web browsers/devices
 ---------------------------------------
 
