@@ -89,23 +89,23 @@ const maxMessages = 25; // Maximum number of messages to keep
 
 // Array of commands and corresponding actions
 const commandActions = [
-    { 
-        command: "weather", 
+    {
+        command: "weather",
         action: fetchWeather,
         gif: 'https://i.ibb.co/gRSdL49/Weather-Plug-in-gif.gif' // GIF for the weather command
     },
-    { 
-        command: "joke", 
+    {
+        command: "joke",
         action: tellJoke,
         gif: 'https://i.ibb.co/album/XYZ123/Joke-Plugin.gif' // GIF for the joke command
     },
     {
-    "command": "random time",
-    "action": "tellTimeInRandomLocation",
-    "gif": "https://i.ibb.co/your-gif-url.gif"
+        command: "random time",
+        action: tellTimeInRandomLocation,
+        gif: "https://i.ibb.co/your-gif-url.gif"
     }
-  
 ];
+
 
       function getRandomLocation() {
     const locations = [
