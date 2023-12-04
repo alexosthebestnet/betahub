@@ -99,6 +99,11 @@ const commandActions = [
         action: tellJoke,
         gif: 'https://i.ibb.co/album/XYZ123/Joke-Plugin.gif' // GIF for the joke command
     },
+  {
+    "command": "fact",
+    "action": fetchRandomFact,
+    "gif": 'https://i.ibb.co/your-gif-link.gif' // Replace with a relevant GIF link
+}
 ];
 
 function fetchWeather() {
@@ -123,6 +128,12 @@ const jokes = [
 function tellJoke() {
     const randomIndex = Math.floor(Math.random() * jokes.length);
     return jokes[randomIndex];
+}
+      async function fetchRandomFact() {
+    const facts = ['Honey never spoils.', 'Octopuses have three hearts.', "Bananas are berries, but strawberries aren't.", "A group of flamingos is called a 'flamboyance'.", 'Cows have best friends and get stressed when separated.', 'A bolt of lightning contains enough energy to toast 100,000 slices of bread.', 'The Eiffel Tower can be 15 cm taller during the summer.', 'Polar bear skin is black, and their fur is not white but transparent.', 'The heart of a shrimp is located in its head.', 'A snail can sleep for three years.', 'The fingerprints of a koala are so indistinguishable from humans that they have on occasion been confused at a crime scene.', 'A single cloud can weigh more than 1 million pounds.', "A human could swim through a blue whale's veins.", 'Horses and cows sleep while standing up.', 'Butterflies taste with their feet.', 'The inventor of the frisbee was cremated and made into a frisbee after he died.', 'Hot water will turn into ice faster than cold water.', 'Gorillas burp when they are happy.', 'In 2015, more people were killed from injuries caused by taking a selfie than by shark attacks.', 'The total weight of all the ants on Earth is about the same as the weight of all the humans on the planet.', 'On Jupiter and Saturn, it rains diamonds.', 'Starfish are not fish, and killer whales are not whales.', 'A group of crows is called a murder.', 'The unicorn is the national animal of Scotland.', 'There are more possible iterations of a game of chess than there are atoms in the known universe.', 'The longest time between two twins being born is 87 days.', "The world's deepest postbox is in Susami Bay in Japan. It's 10 meters underwater.", 'In 2007, an American man named Corey Taylor tried to fake his own death to get out of his cell phone contract without a penalty.', "The oldest 'your mom' joke was discovered on a 3,500-year-old Babylonian tablet.", 'In 2016, the longest-ever echo in a man-made structure was recorded in an underground fuel depot constructed in Scotland before World War II; the echo lasted 112 seconds.', 'The first oranges weren’t orange, they were green.', 'In France, it is legal to marry a dead person.', 'Russia has a larger surface area than Pluto.', 'There is an opera house on the U.S.–Canada border where the stage is in one country and half the audience is in another.', 'The shortest war in history was between Britain and Zanzibar on August 27, 1896. Zanzibar surrendered after 38 minutes.', "A cow-bison hybrid is called a 'beefalo'.", 'Johnny Appleseed’s fruits were not eaten but used to make hard cider.', "Scotland has 421 words for 'snow'.", "You can't hum while holding your nose closed.", 'The longest English word is 189,819 letters long.', 'Cats have fewer toes on their back paws.', 'Kleenex tissues were originally intended for gas masks.', 'The first computer was invented in the 1940s.', 'Space smells like seared steak.', 'The longest wedding veil was the same length as 63.5 football fields.', 'The unicorn is the national animal of Scotland.', 'Some cats are allergic to people.', 'M&M stands for Mars and Murrie.', 'The first oranges weren’t orange.', 'Most Disney characters wear gloves to keep animation simple.'];
+
+    const randomIndex = Math.floor(Math.random() * facts.length);
+    return facts[randomIndex];
 }
 
 
