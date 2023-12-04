@@ -246,7 +246,7 @@ function sendCommandToAPI(command) {
             "Authorization": "Bearer HnO6SXFKeKem8tkzRo8f8LAbeWL42F6h" // Your API key
         },
         body: JSON.stringify({
-            "model": "mistralai/Mistral-7B-Instruct-v0.1",
+            "model": "openchat/openchat_3.5",
             "messages": messages
         })
     })
@@ -292,7 +292,9 @@ function speakResponse(response) {
         }
     });
 
-    const speechText = actionResponse || response;
+    const cleanedResponse = response.replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, '');
+
+    const speechText = actionResponse || cleanedResponse;
 
     setGif(gifToUse);
     responsiveVoice.speak(speechText, "Australian Male", {
