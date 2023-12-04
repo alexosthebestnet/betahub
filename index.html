@@ -128,7 +128,7 @@ function getCurrentTime(utcOffset) {
 function tellTimeInRandomLocation() {
     const randomLocation = getRandomLocation();
     const currentTime = getCurrentTime(randomLocation.utcOffset);
-    return \`The current time in \${randomLocation.name} is \${currentTime}.\`;
+    return `The current time in ${randomLocation.name} is ${currentTime}.`;
 }
 
 
