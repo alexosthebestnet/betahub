@@ -9,18 +9,16 @@
     </style>
 </head>
 <body>
-    <img id="status-gif" src="bootup.gif" alt="Status">
+    <img id="status-gif" src="normal-state.gif" alt="Status"> <!-- Replace with actual path to normal-state.gif -->
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             const statusGif = document.getElementById('status-gif');
             let recognition;
             let isRecording = false;
             let wakeWordDetected = false;
-            let messageHistory = [{ role: "system", content: "System message content here" }]; // System message
+            let messageHistory = [{ role: "system", content: "System message content here" }];
             let currentMessage = '';
             let silenceTimer = null;
-
-            setTimeout(() => { changeGif('normal-state.gif'); }, 3000); // Bootup for 3 seconds
 
             function initializeSpeechRecognition() {
                 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -36,61 +34,54 @@
             }
 
             function restartSpeechRecognition() {
-                if (!wakeWordDetected) {
-                    recognition.stop();
-                    setTimeout(() => {
-                        recognition.start();
-                        console.log("Speech recognition restarted.");
-                    }, 100); // Brief pause before restart
-                    resetSilenceTimer();
+                if (!wakeWordDetected && !recognition.continuous) {
+                    recognition.start();
+                    console.log("Speech recognition restarted.");
                 }
+                resetSilenceTimer();
             }
 
-           function handleRecognitionResult(event) {
-    for (let i = event.resultIndex; i < event.results.length; ++i) {
-        if (event.results[i][0] && typeof event.results[i][0].transcript === 'string') {
-            let transcript = event.results[i][0].transcript.trim().replace(/,/g, "");
-            if (event.results[i].isFinal) {
-                console.log("Heard:", transcript);
-                resetSilenceTimer(); // Reset timer on any final speech detected
+            function handleRecognitionResult(event) {
+                let interimTranscript = '';
 
-                if (transcript.toLowerCase().includes("hey hub")) {
-                    wakeWordDetected = true;
-                    isRecording = true;
-                    let splitTranscript = transcript.toLowerCase().split("hey hub");
-                    if (splitTranscript.length > 1) {
-                        currentMessage = splitTranscript[1].trim(); // Capture only after "Hey Hub"
-                    } else {
-                        currentMessage = ""; // Clear message if "Hey Hub" not followed by more speech
-                    }
-                    changeGif('wake-word-detected.gif');
-                    console.log("Wake word detected. Switching to listening mode.");
-                } else if (wakeWordDetected) {
-                    currentMessage += ' ' + transcript;
-                    changeGif('word-spoken.gif');
-                    if (isRecording) {
-                        setTimeout(sendInputToAPI, 2000); // Send input after 2 seconds of pause
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    let transcript = event.results[i][0].transcript.trim().replace(/,/g, "");
+                    interimTranscript += transcript;
+
+                    if (event.results[i].isFinal) {
+                        console.log("Heard:", transcript);
+                        resetSilenceTimer(); // Reset timer on any final speech detected
+
+                        if (!wakeWordDetected && interimTranscript.toLowerCase().includes("hey hub")) {
+                            wakeWordDetected = true;
+                            isRecording = true;
+                            currentMessage = interimTranscript.split("hey hub")[1].trim(); // Capture only after "Hey Hub"
+                            changeGif('wake-word-detected.gif'); // Replace with actual path
+                            console.log("Wake word detected. Switching to listening mode.");
+                        } else if (wakeWordDetected) {
+                            currentMessage += ' ' + transcript;
+                            changeGif('word-spoken.gif'); // Replace with actual path
+                            if (isRecording) {
+                                setTimeout(sendInputToAPI, 2000); // Send input after 2 seconds of pause
+                            }
+                        }
                     }
                 }
             }
-        }
-    }
-}
-
 
             function sendInputToAPI() {
                 isRecording = false;
-                changeGif('sending-to-api.gif');
+                changeGif('sending-to-api.gif'); // Replace with actual path
                 console.log("Sending to API:", currentMessage);
                 messageHistory.push({ role: "user", content: currentMessage });
-                if (messageHistory.length > 50) { // Keep last 25 user-assistant pairs
+                if (messageHistory.length > 50) {
                     messageHistory = messageHistory.slice(-50);
                 }
 
-                let token = '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'; // Your API key
+                let token = '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'; // API key
                 fetch('https://api.openai.com/v1/chat/completions', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer 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` },
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                     body: JSON.stringify({ model: "gpt-3.5-turbo", messages: messageHistory })
                 })
                 .then(response => response.json())
@@ -104,7 +95,7 @@
             }
 
             function receiveAPIResponse(response) {
-                changeGif('responding.gif');
+                changeGif('responding.gif'); // Replace with actual path
                 speak(response);
                 resetState();
             }
@@ -119,7 +110,7 @@
                 wakeWordDetected = false;
                 currentMessage = '';
                 setTimeout(() => {
-                    changeGif('normal-state.gif');
+                    changeGif('normal-state.gif'); // Replace with actual path
                 }, 5000); // Reset state after 5 seconds
             }
 
@@ -128,11 +119,9 @@
                 silenceTimer = setTimeout(() => {
                     if (!isRecording) {
                         recognition.stop();
-                        setTimeout(() => {
-                            recognition.start();
-                            changeGif('normal-state.gif');
-                            console.log("No speech detected. Resetting.");
-                        }, 100);
+                        recognition.start();
+                        changeGif('normal-state.gif'); // Replace with actual path
+                        console.log("No speech detected. Resetting.");
                     }
                 }, 30000); // 30 seconds of silence
             }
