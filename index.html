@@ -20,7 +20,6 @@ document.addEventListener("DOMContentLoaded", function() {
             let wakeWordDetected = false;
             let currentMessage = '';
             let interimTranscript = '';
-    recognition.interimResults = false; // For better performance on mobile
             let silenceTimer = null;
     let debugMode = false;
         let touchCount = 0;
@@ -60,6 +59,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 recognition.start();
                 resetSilenceTimer();
                 console.log("Speech recognition initialized.");
+                    recognition.interimResults = false; // Set this after initializing recognition
             }
 
             function restartSpeechRecognition() {
