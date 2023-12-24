@@ -6,6 +6,7 @@
     <style>
         body, html { margin: 0; height: 100%; font-family: Arial, sans-serif; background: black; color: white }
         #status-gif { width: 100%; height: auto; }
+        #debug-output { color: white; position: fixed; bottom: 10px; left: 10px; right: 10px; background: rgba(0, 0, 0, 0.7); padding: 5px; border-radius: 5px; display: none; }
     </style>
 </head>
 <body>
@@ -20,23 +21,28 @@ document.addEventListener("DOMContentLoaded", function() {
             let currentMessage = '';
             let interimTranscript = '';
             let silenceTimer = null;
-     let debugMode = false;
+    let debugMode = false;
         let touchCount = 0;
-        const debugOutputDiv = document.getElementById('debug-output');
+        let touchTimer = null;
 
-        document.addEventListener('touchend', function() {
+        function handleTouchEnd() {
             touchCount++;
-            setTimeout(() => { touchCount = 0; }, 500); // Reset touch count after 500 ms
-
-            if (touchCount === 3) {
+            if (touchCount === 1) {
+                touchTimer = setTimeout(() => { touchCount = 0; }, 500); // Wait for 500 ms
+            } else if (touchCount === 3) {
+                clearTimeout(touchTimer);
                 debugMode = !debugMode;
-                debugOutputDiv.style.display = debugMode ? 'block' : 'none';
+                document.getElementById('debug-output').style.display = debugMode ? 'block' : 'none';
                 console.log('Debug mode ' + (debugMode ? 'enabled' : 'disabled'));
+                touchCount = 0;
             }
-        });
-     function updateDebugOutput(message) {
+        }
+
+        document.addEventListener('touchend', handleTouchEnd);
+
+        function updateDebugOutput(message) {
             if (debugMode) {
-                debugOutputDiv.textContent = message;
+                document.getElementById('debug-output').textContent = message;
             }
         }
 
