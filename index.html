@@ -84,7 +84,7 @@
                 let token = localStorage.getItem('OPENAI_API_KEY') || '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'; // Replace with your API key
                 fetch('https://api.openai.com/v1/chat/completions', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer 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` },
                     body: JSON.stringify({ 
                         model: "gpt-3.5-turbo", 
                         messages: [systemMessage, { role: "user", content: input }] 
