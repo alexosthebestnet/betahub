@@ -41,58 +41,65 @@
                 resetSilenceTimer();
             }
 
-            function handleRecognitionResult(event) {
-                let interimTranscript = '';
+function handleRecognitionResult(event) {
+    let interimTranscript = '';
 
-                for (let i = event.resultIndex; i < event.results.length; ++i) {
-                    let transcript = event.results[i][0].transcript.trim().replace(/,/g, "");
-                    interimTranscript += transcript;
+    for (let i = event.resultIndex; i < event.results.length; ++i) {
+        if (event.results[i][0]) {
+            let transcript = event.results[i][0].transcript.trim().replace(/,/g, "");
+            interimTranscript += transcript;
 
-                    if (event.results[i].isFinal) {
-                        console.log("Heard:", transcript);
-                        resetSilenceTimer(); // Reset timer on any final speech detected
+            if (event.results[i].isFinal) {
+                console.log("Heard:", transcript);
+                resetSilenceTimer(); // Reset timer on any final speech detected
 
-                        if (!wakeWordDetected && interimTranscript.toLowerCase().includes("hey hub")) {
-                            wakeWordDetected = true;
-                            isRecording = true;
-                            currentMessage = interimTranscript.split("hey hub")[1].trim(); // Capture only after "Hey Hub"
-                            changeGif('wake-word-detected.gif'); // Replace with actual path
-                            console.log("Wake word detected. Switching to listening mode.");
-                        } else if (wakeWordDetected) {
-                            currentMessage += ' ' + transcript;
-                            changeGif('word-spoken.gif'); // Replace with actual path
-                            if (isRecording) {
-                                setTimeout(sendInputToAPI, 2000); // Send input after 2 seconds of pause
-                            }
-                        }
+                if (!wakeWordDetected && interimTranscript.toLowerCase().includes("hey hub")) {
+                    wakeWordDetected = true;
+                    isRecording = true;
+                    let parts = interimTranscript.toLowerCase().split("hey hub");
+                    currentMessage = parts.length > 1 ? parts[1].trim() : "";
+                    changeGif('wake-word-detected.gif'); // Replace with actual path
+                    console.log("Wake word detected. Switching to listening mode.");
+                } else if (wakeWordDetected) {
+                    currentMessage += ' ' + transcript;
+                    changeGif('word-spoken.gif'); // Replace with actual path
+                    if (isRecording) {
+                        setTimeout(sendInputToAPI, 2000); // Send input after 2 seconds of pause
                     }
                 }
             }
+        }
+    }
+}
 
-            function sendInputToAPI() {
-                isRecording = false;
-                changeGif('sending-to-api.gif'); // Replace with actual path
-                console.log("Sending to API:", currentMessage);
-                messageHistory.push({ role: "user", content: currentMessage });
-                if (messageHistory.length > 50) {
-                    messageHistory = messageHistory.slice(-50);
-                }
+function sendInputToAPI() {
+    isRecording = false;
+    changeGif('sending-to-api.gif'); // Replace with actual path
+    console.log("Sending to API:", currentMessage);
+    messageHistory.push({ role: "user", content: currentMessage });
+    if (messageHistory.length > 50) {
+        messageHistory = messageHistory.slice(-50);
+    }
 
-                let token = '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'; // API key
-                fetch('https://api.openai.com/v1/chat/completions', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({ model: "gpt-3.5-turbo", messages: messageHistory })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    let aiResponse = data.choices[0].message.content;
-                    console.log("API response:", aiResponse);
-                    messageHistory.push({ role: "assistant", content: aiResponse });
-                    receiveAPIResponse(aiResponse);
-                })
-                .catch(error => console.error('Error:', error));
-            }
+    let token = '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'; // Correct API key
+    fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ model: "gpt-3.5-turbo", messages: messageHistory })
+    })
+    .then(response => response.json())
+    .then(data => {
+        let aiResponse = data.choices[0].message.content;
+        console.log("API response:", aiResponse);
+        messageHistory.push({ role: "assistant", content: aiResponse });
+        receiveAPIResponse(aiResponse);
+    })
+    .catch(error => console.error('Error:', error));
+}
+
 
             function receiveAPIResponse(response) {
                 changeGif('responding.gif'); // Replace with actual path
