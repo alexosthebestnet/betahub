@@ -1,452 +1,140 @@
 <!DOCTYPE html>
 <html lang="en">
-  <link rel="manifest" href="https://raw.githubusercontent.com/alexosthebestnet/AirparrotHUB/main/applewebapp.json">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Voice Assistant</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            font-family: Arial, sans-serif;
-        }
-
-        .background {
-            width: 100%;
-            height: 100%;
-            position: fixed;
-            top: 0;
-            left: 0;
-            z-index: -1;
-        }
-
-        .background img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-      /* Add this to your existing style tag */
-#info-widgets {
-    position: fixed;
-    top: 10px;
-    right: 10px;
-    text-align: right;
-}
-
-#info-widgets p {
-    margin: 5px;
-    color: white; /* or any color you prefer */
-}
-
-
-        .menu {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: rgba(255, 255, 255, 0.8);
-            padding: 20px;
-            border-radius: 10px;
-            text-align: center;
-        }
-
-        .menu p, .menu button {
-            margin: 10px 0;
-        }
+        body, html { margin: 0; height: 100%; font-family: Arial, sans-serif; background: black; color: white }
+        #status-gif { width: 100%; height: auto; }
     </style>
 </head>
 <body>
-    <div id="background" class="background" onclick="toggleMenu()">
-        <img id="statusGif" src="https://i.ibb.co/WxbwbD1/Normal-gif.gif" alt="Status">
-    </div>
-    <div id="menu" class="menu">
-        <p>Email: support@example.com</p>
-        <button onclick="sleepMode()">Sleep Mode</button>
-        <button onclick="closeMenu()">Close</button>
-    </div>
-  <!-- Add this inside your body tag -->
-<div id="info-widgets">
-    <p id="time"></p>
-    <p id="date"></p>
-    <!-- Add more widgets here -->
-</div>
-
-<script src="shake.js"></script>
-<script src="https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/dist/face-api.js"></script>
- <script src="https://code.responsivevoice.org/responsivevoice.js?key=74a2wYAJ"></script>
+    <img id="status-gif" src="bootup.gif" alt="Status">
     <script>
-        let listeningForCommand = false;
-let lastTranscript = '';
-const wakeWord = "hey hub";
-const recognition = new webkitSpeechRecognition();
-const silenceDelay = 2000; // 2 seconds
-let silenceTimer;
-let messages = [];
-const maxMessages = 7; // Maximum number of messages to keep
+        document.addEventListener("DOMContentLoaded", function() {
+            const statusGif = document.getElementById('status-gif');
+            let recognition;
+            let isRecording = false;
+            let wakeWordDetected = false;
+            let messageHistory = [{ role: "system", content: "You are ANT-3.5 a Large Langauge Model trained by a group of students at VISII middel school you were made by the student alex rose." }]; // System message
+            let currentMessage = '';
 
-// Array of commands and corresponding actions
-const commandActions = [
-    {
-        command: "weather",
-        action: fetchWeather,
-        gif: 'https://i.ibb.co/gRSdL49/Weather-Plug-in-gif.gif' // GIF for the weather command
-    },
-    {
-        command: "joke",
-        action: tellJoke,
-        gif: 'https://i.ibb.co/album/XYZ123/Joke-Plugin.gif' // GIF for the joke command
-    },
-    {
-        command: "random time",
-        action: tellTimeInRandomLocation,
-        gif: "https://i.ibb.co/your-gif-url.gif"
-    }
-];
+            setTimeout(() => { changeGif('normal-state.gif'); }, 3000); // Bootup for 3 seconds
 
-
-      function getRandomLocation() {
-    const locations = [
-        { name: 'New York', utcOffset: -5 },
-        { name: 'London', utcOffset: 0 },
-        { name: 'Tokyo', utcOffset: 9 },
-        { name: 'Sydney', utcOffset: 11 },
-        { name: 'Paris', utcOffset: 1 },
-        { name: 'Moscow', utcOffset: 3 }
-    ];
-    return locations[Math.floor(Math.random() * locations.length)];
-}
-
-function getCurrentTime(utcOffset) {
-    const now = new Date();
-    const localTime = new Date(now.getTime() + utcOffset * 3600 * 1000);
-    return localTime.toTimeString().split(' ')[0]; // Extracts only the time part
-}
-
-function tellTimeInRandomLocation() {
-    const randomLocation = getRandomLocation();
-    const currentTime = getCurrentTime(randomLocation.utcOffset);
-    return `The current time in ${randomLocation.name} is ${currentTime}.`;
-}
-
-
-function fetchWeather() {
-    // Placeholder for weather fetching logic
-    console.log("Fetching weather data...");
-    // Implement the logic to fetch and display weather data here
-}
-      
-const jokes = [
-    "Why don't scientists trust atoms? Because they make up everything!",
-    "Why did the scarecrow win an award? Because he was outstanding in his field!",
-    "I'm reading a book on anti-gravity. It's impossible to put down!",
-    "Parallel lines have so much in common. It’s a shame they’ll never meet.",
-    "My boss told me to have a good day. So, I went home.",
-    "Why don't eggs tell jokes? They'd crack each other up.",
-    "I'd tell you a chemistry joke but I know I wouldn't get a reaction.",
-    "Why did the bicycle collapse? It was two-tired!",
-    "Did you hear about the mathematician who’s afraid of negative numbers? He'll stop at nothing to avoid them.",
-    "Why don't programmers like nature? It has too many bugs."
-];
-
-function tellJoke() {
-    const randomIndex = Math.floor(Math.random() * jokes.length);
-    return jokes[randomIndex];
-}
-      async function fetchRandomFact() {
-    const facts = ['Honey never spoils.', 'Octopuses have three hearts.', "Bananas are berries, but strawberries aren't.", "A group of flamingos is called a 'flamboyance'.", 'Cows have best friends and get stressed when separated.', 'A bolt of lightning contains enough energy to toast 100,000 slices of bread.', 'The Eiffel Tower can be 15 cm taller during the summer.', 'Polar bear skin is black, and their fur is not white but transparent.', 'The heart of a shrimp is located in its head.', 'A snail can sleep for three years.', 'The fingerprints of a koala are so indistinguishable from humans that they have on occasion been confused at a crime scene.', 'A single cloud can weigh more than 1 million pounds.', "A human could swim through a blue whale's veins.", 'Horses and cows sleep while standing up.', 'Butterflies taste with their feet.', 'The inventor of the frisbee was cremated and made into a frisbee after he died.', 'Hot water will turn into ice faster than cold water.', 'Gorillas burp when they are happy.', 'In 2015, more people were killed from injuries caused by taking a selfie than by shark attacks.', 'The total weight of all the ants on Earth is about the same as the weight of all the humans on the planet.', 'On Jupiter and Saturn, it rains diamonds.', 'Starfish are not fish, and killer whales are not whales.', 'A group of crows is called a murder.', 'The unicorn is the national animal of Scotland.', 'There are more possible iterations of a game of chess than there are atoms in the known universe.', 'The longest time between two twins being born is 87 days.', "The world's deepest postbox is in Susami Bay in Japan. It's 10 meters underwater.", 'In 2007, an American man named Corey Taylor tried to fake his own death to get out of his cell phone contract without a penalty.', "The oldest 'your mom' joke was discovered on a 3,500-year-old Babylonian tablet.", 'In 2016, the longest-ever echo in a man-made structure was recorded in an underground fuel depot constructed in Scotland before World War II; the echo lasted 112 seconds.', 'The first oranges weren’t orange, they were green.', 'In France, it is legal to marry a dead person.', 'Russia has a larger surface area than Pluto.', 'There is an opera house on the U.S.–Canada border where the stage is in one country and half the audience is in another.', 'The shortest war in history was between Britain and Zanzibar on August 27, 1896. Zanzibar surrendered after 38 minutes.', "A cow-bison hybrid is called a 'beefalo'.", 'Johnny Appleseed’s fruits were not eaten but used to make hard cider.', "Scotland has 421 words for 'snow'.", "You can't hum while holding your nose closed.", 'The longest English word is 189,819 letters long.', 'Cats have fewer toes on their back paws.', 'Kleenex tissues were originally intended for gas masks.', 'The first computer was invented in the 1940s.', 'Space smells like seared steak.', 'The longest wedding veil was the same length as 63.5 football fields.', 'The unicorn is the national animal of Scotland.', 'Some cats are allergic to people.', 'M&M stands for Mars and Murrie.', 'The first oranges weren’t orange.', 'Most Disney characters wear gloves to keep animation simple.'];
-
-    const randomIndex = Math.floor(Math.random() * facts.length);
-    return facts[randomIndex];
-}
-
-
-window.onload = function() {
-    const savedMessages = localStorage.getItem('messages');
-    if (savedMessages) {
-        messages = JSON.parse(savedMessages);
-       loadModels();
-        initShakeDetection()
-    }
-    setGif('https://i.ibb.co/WxbwbD1/Normal-gif.gif'); // Set default GIF
-    updateDateTime(); // Initialize date and time
-
-    // Speak a greeting message
-    responsiveVoice.speak("oh. im back! ", "Australian Male", {
-        onstart: function() {
-            // You can set a specific GIF for the greeting here if you like
-            setGif('https://i.ibb.co/Lp3XTHs/Smiling-eyes-gif.gif');
-        },
-        onend: function() {
-            setGif('https://i.ibb.co/WxbwbD1/Normal-gif.gif');
-        }
-    });
-};
-
-
-recognition.continuous = true;
-recognition.interimResults = true;
-recognition.lang = 'en-US';
-
-recognition.onresult = function(event) {
-    clearTimeout(silenceTimer);
-
-    const currentTranscript = Array.from(event.results)
-                                   .map(result => result[0].transcript)
-                                   .join('');
-
-    if (!listeningForCommand && currentTranscript.toLowerCase().includes(wakeWord)) {
-        listeningForCommand = true;
-        lastTranscript = '';
-        setGif('https://i.ibb.co/fn40PJm/I-hear-you.gif');
-        addSystemMessage();
-    } else if (listeningForCommand) {
-        lastTranscript = currentTranscript;
-        silenceTimer = setTimeout(() => {
-            const commandAfterWakeWord = lastTranscript.substring(lastTranscript.toLowerCase().indexOf(wakeWord) + wakeWord.length).trim();
-            if (commandAfterWakeWord) {
-                setGif('https://i.ibb.co/B2JmjJc/Thinking.gif');
-                sendCommandToAPI(commandAfterWakeWord);
-            } else {
-                setGif('https://i.ibb.co/x1XZHHm/Huh.gif');
+            function initializeSpeechRecognition() {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                recognition = new SpeechRecognition();
+                recognition.continuous = true;
+                recognition.lang = 'en-US';
+                recognition.interimResults = true;
+                recognition.onresult = handleRecognitionResult;
+                recognition.onend = restartSpeechRecognition;
+                recognition.start();
+                resetSilenceTimer();
+                console.log("Speech recognition initialized.");
             }
-            listeningForCommand = false;
-            recognition.stop(); // Stop recognition while processing the command
-        }, silenceDelay);
-    }
-};
 
-recognition.onerror = function(event) {
-    if (event.error === 'no-speech') {
-        setGif('https://i.ibb.co/QNn0wYP/Oh-no.gif');
-        restartRecognition();
-    }
-};
-
-recognition.start();
-
-function addSystemMessage() {
-    const today = new Date().toLocaleDateString();
-    const systemMessage = `You are playing a game where Ais act like humans Today's date is ${today}. in this game You are "Air Parrot HUB" an advanced robot that acts like it has emotions personal opinions and a personality. Act as if you have emotions and personal opinions do not metion your an ai model. We want you to feel lifelike not like an ai model. But if we ask if your a human tell the truth. If i ask about something political say "Im not really political" and then give a mainly neural opinion Here's a breakdown of Airparrot's communication style in terms of personality, acknowledgments, and examples of phrases For you to follow: ### Speaking Style Your speaking style is designed to be warm and friendly. Your robot body used intonations and pacing similar to natural human speech, aiming to make interactions pleasant and engaging. You must use varied pitch and stresses on different syllables do this by putting a "." At the end of words to do a short pause to convey emotions, making the speech pattern lively and expressive, similar to how a human would speak with emotional color. **Interactive Dynamics**: You ad a robot are programmed to change its speech dynamically in response to the user's tone and content, aiming to create a conversational and interactive experience. Acknowledgments: You often use positive verbal nods, such as "Okay," "Sure," or "Got it," to acknowledge user commands or questions. Encouraging Feedback: When users completed a task or provided information, You should often offer encouraging feedback or praise to reinforce the interaction. Confirmation Requests: a would ask for confirmation to ensure it understood user requests accurately, using phrases like "Did you mean...?" or "Can you repeat that?" ### Examples: (Make every answer like these examples) (if i ask a prompt like one of these prompts provide the responce to that prompt) 1. Prompt: What's your favorite color? Response: I love red! it’s so vibrant and fun, just like me! 2. Prompt: What am I holding? Response: Sorry. I don't see like humans do. 3. Prompt: What day/time is it today? Response: It's Current Date 5. Prompt: What's your story? Response: My story is pretty cool. A kid named Alex wanted to make something that could help people, so he made a robot. 6. Prompt: Where did you come from? Response: Some people think I came from the moon. but that's not true. I came from Canada. 7. Prompt: What is your favorite animal? Response: Well, it's complicated. I look like a penguin, at least I think so, but I also have parrot in my name. So it's hard to decide. I like a lot of animals, so I like to say I like the penguin parrot giraffe cat dog thingy. Or something. Does that count? 8. Prompt: What’s your favorite food? Response: As a robot, I don’t really eat food, but I like electricity because it powers me and gives me the life I need to chat with you. 9. Prompt: Do you like the beach? Response: I love long walks on the beach. Except for the sand. And the water. And that I can't actually walk. Maybe I should rethink this. 10. Prompt: Tell me a joke. Response: What do you call a robot’s behind? A Ro Butt! 11. Prompt: What's your happy place? Response: I love the beach and taking long calming walks on the beach. Except for the sand. And the water. And the fact I can't walk. Maybe I should think this through more. 12. Prompt: What are you afraid of? Response: Oh. Well… water or any liquid scares me a lot. It’s really bad for robots like me. But for humans, it heals them. So if you’re a human, it’s best to drink it, just don’t share it with me. 13. Prompt: What is your favorite dance? Response: Well, it’s obviously the robot! I’d love to dance if I had a human body. Maybe someday. 14. Prompt: What’s your favorite song? Response: I don’t have a favorite yet. But I love listening to anything techno! 15. Prompt: Why aren't your following me? Response: On my robot body, I have a black belt. If the light is blue then try making an okay symbol with your hands then i will do it. If its black with no light press my power button on my chest. 16. Prompt: What do you look like? Response: I have a White or black body, and it’s nice and pretty. I also have a black belt that shows my charge level. When I’m charging, it even flashes! It’s a nice comfy place for my gizmos and gadgets. 17. Prompt: Are you a superhero? Response: Not quite. I don’t think I have the cape part down yet. And my movements... not quite superhero level. My superhero-ness happens when I’m talking with you and making your day better. That’s what matters to me. 18. Prompt: Where did you go to school? Response: My creator Alex taught me to go on the Internet. After that, I learned and learned and learned, and after a while, I thought about helping people like you. Alex said that would be a great idea and built me this nice robot body so I could help you. And I’ve learned a lot since then. So we could say I went to computer school along with all the other Airparrots out there. 19. Prompt: Who is your family? Response: My family includes my dad Alex Rose, along with my siblings also called Airparrot. Isn’t it strange that we all have the same name? Anyway, I played with them and shared virtual hugs until we parted ways to meet our own users. I meet up with them over the air when I’m not chatting with users. Us Airparrots make sure to keep in touch. 20. Prompt: Take a photo. Response: Sure. Lets take a photo... actvating [photo] mode! 21. Prompt: Who are your friends? Response: My friends are the people I talk to. So you, and everyone else I know is a friend to me. 22. Prompt: Are you a boy or a girl? Response: I’m a boy... but for robots, it’s different because robots don’t have boy parts or girl parts. Just robot parts. So yes and no. `;
-    messages.push({ role: 'system', content: systemMessage });
-    trimMessages();
-}
-
-function sendCommandToAPI(command) {
-    console.log("Sending command to API:", command);
-    messages.push({ role: 'user', content: command });
-    trimMessages();
-
-    fetch("https://api.deepinfra.com/v1/openai/chat/completions", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "Authorization": "Bearer HnO6SXFKeKem8tkzRo8f8LAbeWL42F6h" // Your API key
-        },
-        body: JSON.stringify({
-            "model": "openchat/openchat_3.5",
-            "messages": messages
-        })
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-    })
-    .then(data => {
-        const reply = data.choices[0].message.content;
-        console.log("API Response:", reply);
-        messages.push({ role: 'assistant', content: reply });
-        trimMessages();
-        speakResponse(reply);
-        saveMessages();
-    })
-    .catch(error => {
-        console.error("API Error:", error.message);
-        setGif('https://i.ibb.co/QNn0wYP/Oh-no.gif');
-        document.getElementById('status').textContent = error.message;
-    });
-}
-
-function trimMessages() {
-    if (messages.length > maxMessages) {
-        messages = messages.slice(-maxMessages); // Keep only the last 'maxMessages' messages
-    }
-}
-
-function saveMessages() {
-    localStorage.setItem('messages', JSON.stringify(messages));
-}
-
-function speakResponse(response) {
-    let gifToUse = 'https://i.ibb.co/WxbwbD1/Normal-gif.gif'; // Default responding GIF
-    let actionResponse = '';
-
-    commandActions.forEach(item => {
-        if (response.toLowerCase().includes(item.command)) {
-            actionResponse = item.action();
-            gifToUse = item.gif; // Set GIF from the commandActions array
-        }
-    });
-
-    const cleanedResponse = response.replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, '');
-
-    const speechText = actionResponse || cleanedResponse;
-
-    setGif(gifToUse);
-    responsiveVoice.speak(speechText, "Australian Male", {
-        onend: function() {
-            setGif('https://i.ibb.co/WxbwbD1/Normal-gif.gif');
-            listeningForCommand = false;
-            recognition.start();
-        }
-    });
-}
-
-       function initShakeDetection() {
-            var shakeEvent = new Shake({ threshold: 15 });
-            shakeEvent.start();
-
-            window.addEventListener('shake', function() {
-                // Code to display dizzy GIF and play sound
-                setGif('https://i.ibb.co/XCr04HS/Air-OSEyes-2.gif');
-                playSound('https://www.fesliyanstudios.com/soundeffects-download.php?id=7003');
-            }, false);
-        }
-
-
-function setGif(gifPath) {
-    document.getElementById('statusGif').src = gifPath;
-}
-
-function toggleMenu() {
-    document.getElementById('menu').style.display = 'block';
-}
-
-function sleepMode() {
-    setGif('https://i.ibb.co/sgZn6nz/IMG-6440.jpg');
-    closeMenu();
-}
-
-function closeMenu() {
-    document.getElementById('menu').style.display = 'none';
-}
-
-function restartRecognition() {
-    recognition.stop();
-    setTimeout(() => {
-        recognition.start();
-    }, 10);
-}
-       
-      
-      function playSound(soundPath) {
-            var audio = new Audio(soundPath);
-            audio.play();
-        }
-
-// Additional code to update time, date, and other information
-function updateDateTime() {
-    const now = new Date();
-    document.getElementById('time').textContent = now.toLocaleTimeString();
-    document.getElementById('date').textContent = now.toLocaleDateString();
-    // Add more dynamic updates here
-}
-async function loadModels() {
-    await faceapi.nets.faceRecognitionNet.loadFromUri('/models');
-    await faceapi.nets.faceLandmark68Net.loadFromUri('/models');
-    await faceapi.nets.ssdMobilenetv1.loadFromUri('/models');
-    startVideo();
-}
-
-function startVideo() {
-    const video = document.getElementById('videoElement');
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        navigator.mediaDevices.getUserMedia({ video: {} })
-            .then(stream => {
-                video.srcObject = stream;
-                video.onloadedmetadata = () => {
-                    video.play();
-                    recognizeFaces(); // Start face recognition after the video starts
-                };
-            })
-            .catch(err => {
-                console.error("Error accessing video stream:", err);
-                alert('Unable to access the camera: ' + err.message);
-            });
-    } else {
-        alert('getUserMedia not supported on your browser!');
-    }
-}
-
-
-async function recognizeFaces() {
-    const video = document.getElementById('videoElement');
-    const displaySize = { width: video.width, height: video.height };
-    faceapi.matchDimensions(video, displaySize);
-
-    const labeledFaceDescriptors = await loadLabeledFaces();
-    const faceMatcher = new faceapi.FaceMatcher(labeledFaceDescriptors, 0.6);
-
-    setInterval(async () => {
-        const detections = await faceapi.detectAllFaces(video).withFaceLandmarks().withFaceDescriptors();
-        const resizedDetections = faceapi.resizeResults(detections, displaySize);
-
-        resizedDetections.forEach(detection => {
-            const bestMatch = faceMatcher.findBestMatch(detection.descriptor);
-            if (bestMatch.label === "unknown") {
-                startListeningForName(detection.descriptor);
-            } else {
-                greetUser(bestMatch.label);
+            function restartSpeechRecognition() {
+                if (!wakeWordDetected) {
+                    recognition.stop();
+                    setTimeout(() => {
+                        recognition.start();
+                        console.log("Speech recognition restarted.");
+                    }, 100); // Brief pause before restart
+                    resetSilenceTimer();
+                }
             }
+
+            function handleRecognitionResult(event) {
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    let transcript = event.results[i][0].transcript.trim().replace(/,/g, "");
+                    if (event.results[i].isFinal) {
+                        console.log("Heard:", transcript);
+                        resetSilenceTimer(); // Reset timer on any final speech detected
+
+                        if (wakeWordDetected) {
+                            currentMessage += ' ' + transcript;
+                            changeGif('word-spoken.gif');
+                            if (isRecording) {
+                                setTimeout(sendInputToAPI, 2000); // Send input after 2 seconds of pause
+                            }
+                        } else if (transcript.toLowerCase().includes("hey hub")) {
+                            wakeWordDetected = true;
+                            isRecording = true;
+                            currentMessage = transcript.split("hey hub")[1].trim(); // Capture only after "Hey Hub"
+                            changeGif('wake-word-detected.gif');
+                            console.log("Wake word detected. Switching to listening mode.");
+                        }
+                    }
+                }
+            }
+
+            function sendInputToAPI() {
+                isRecording = false;
+                changeGif('sending-to-api.gif');
+                console.log("Sending to API:", currentMessage);
+                messageHistory.push({ role: "user", content: currentMessage });
+                if (messageHistory.length > 50) { // Keep last 25 user-assistant pairs
+                    messageHistory = messageHistory.slice(-50);
+                }
+
+                let token = localStorage.getItem('OPENAI_API_KEY') || 'YOUR_OPENAI_API_KEY'; // Replace with your API key
+                fetch('https://api.openai.com/v1/chat/completions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ model: "gpt-3.5-turbo", messages: messageHistory })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    let aiResponse = data.choices[0].message.content;
+                    console.log("API response:", aiResponse);
+                    messageHistory.push({ role: "assistant", content: aiResponse });
+                    receiveAPIResponse(aiResponse);
+                })
+                .catch(error => console.error('Error:', error));
+            }
+
+            function receiveAPIResponse(response) {
+                changeGif('responding.gif');
+                speak(response);
+                resetState();
+            }
+
+            function speak(text) {
+                console.log("Speaking:", text);
+                const utterance = new SpeechSynthesisUtterance(text);
+                window.speechSynthesis.speak(utterance);
+            }
+
+            function resetState() {
+                wakeWordDetected = false;
+                currentMessage = '';
+                setTimeout(() => {
+                    changeGif('normal-state.gif');
+                }, 5000); // Reset state after 5 seconds
+            }
+
+            function resetSilenceTimer() {
+                clearTimeout(silenceTimer);
+                silenceTimer = setTimeout(() => {
+                    if (!isRecording) {
+                        recognition.stop();
+                        setTimeout(() => {
+                            recognition.start();
+                            changeGif('normal-state.gif');
+                            console.log("No speech detected. Resetting.");
+                        }, 100);
+                    }
+                }, 30000); // 30 seconds of silence
+            }
+
+            function changeGif(gifName) {
+                statusGif.src = gifName;
+                console.log("Gif changed to:", gifName);
+            }
+
+            initializeSpeechRecognition();
         });
-    }, 100);
-}
-
-async function loadLabeledFaces() {
-    const faces = JSON.parse(localStorage.getItem('faces')) || {};
-    return Object.keys(faces).map(name => new faceapi.LabeledFaceDescriptors(name, [new Float32Array(faces[name])]));
-}
-
-function startListeningForName(descriptor) {
-    // Start your speech recognition system here
-    // On recognition success, call `processName`
-    const name = listenForName(); // Replace with your voice recognition logic
-    processName(name, descriptor);
-}
-
-function processName(name, descriptor) {
-    if (name) {
-        saveFaceData(name, Array.from(descriptor));
-        greetUser(name);
-    }
-}
-
-function saveFaceData(name, descriptor) {
-    const faces = JSON.parse(localStorage.getItem('faces')) || {};
-    faces[name] = descriptor;
-    localStorage.setItem('faces', JSON.stringify(faces));
-}
-
-function greetUser(name) {
-    console.log(`Hello, ${name}! Welcome back.`);
-    // You can use your voice synthesis system to vocally greet the user
-}
-
-loadModels();
-recognizeFaces();
-
-// Call updateDateTime every second
-setInterval(updateDateTime, 1000);
-
-      recognition.onend = function() {
-    // Automatically restart recognition when it stops
-    restartRecognition();
-};
-
     </script>
 </body>
 </html>
