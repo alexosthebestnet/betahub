@@ -10,8 +10,9 @@
 </head>
 <body>
     <img id="status-gif" src="bootup.gif" alt="Status">
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
+<script src="https://code.responsivevoice.org/responsivevoice.js?key=74a2wYAJ"></script>
+<script> 
+document.addEventListener("DOMContentLoaded", function() {
             const statusGif = document.getElementById('status-gif');
             let recognition;
             let wakeWordDetected = false;
@@ -184,10 +185,10 @@
                 resetState();
             }
 
-            function speak(text) {
-                console.log("Speaking:", text);
-                const utterance = new SpeechSynthesisUtterance(text);
-                window.speechSynthesis.speak(utterance);
+           function speak(text) {
+            console.log("Speaking:", text);
+            responsiveVoice.speak(text, "UK English Male"); // Replace with your preferred voice
+        
             }
 
             function resetState() {
