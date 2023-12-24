@@ -46,34 +46,36 @@
                 }
             }
 
-            function handleRecognitionResult(event) {
-                let currentTranscript = '';
+           function handleRecognitionResult(event) {
+    for (let i = event.resultIndex; i < event.results.length; ++i) {
+        // Ensure that the transcript exists before trying to trim and replace
+        if (event.results[i][0] && event.results[i][0].transcript) {
+            let transcript = event.results[i][0].transcript.trim().replace(/,/g, "");
+            if (event.results[i].isFinal) {
+                console.log("Heard:", transcript);
+                resetSilenceTimer(); // Reset timer on any final speech detected
 
-                for (let i = event.resultIndex; i < event.results.length; ++i) {
-                    currentTranscript = event.results[i][0].transcript.trim().replace(/,/g, "");
-                    if (event.results[i].isFinal) {
-                        console.log("Heard:", currentTranscript);
-                        resetSilenceTimer(); // Reset timer on any final speech detected
+                if (transcript.toLowerCase().includes("hey hub")) {
+                    wakeWordDetected = true;
+                    isRecording = true;
+                    currentMessage = transcript.split("hey hub")[1].trim(); // Capture only after "Hey Hub"
+                    changeGif('wake-word-detected.gif');
+                    console.log("Wake word detected. Switching to listening mode.");
+                    continue; // Skip further processing in this iteration
+                }
 
-                        if (currentTranscript.toLowerCase().includes("hey hub")) {
-                            wakeWordDetected = true;
-                            isRecording = true;
-                            currentMessage = currentTranscript.split("hey hub")[1].trim(); // Capture only after "Hey Hub"
-                            changeGif('wake-word-detected.gif');
-                            console.log("Wake word detected. Switching to listening mode.");
-                            continue; // Skip further processing in this iteration
-                        }
-
-                        if (wakeWordDetected) {
-                            currentMessage += ' ' + currentTranscript;
-                            changeGif('word-spoken.gif');
-                            if (isRecording) {
-                                setTimeout(sendInputToAPI, 2000); // Send input after 2 seconds of pause
-                            }
-                        }
+                if (wakeWordDetected) {
+                    currentMessage += ' ' + transcript;
+                    changeGif('word-spoken.gif');
+                    if (isRecording) {
+                        setTimeout(sendInputToAPI, 2000); // Send input after 2 seconds of pause
                     }
                 }
             }
+        }
+    }
+}
+
 
             function sendInputToAPI() {
                 isRecording = false;
