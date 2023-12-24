@@ -61,7 +61,7 @@
                             wakeWordDetected = true;
                             let splitTranscript = transcript.toLowerCase().split("hey hub");
                             interimTranscript = splitTranscript.length > 1 ? splitTranscript[1].trim() : "";
-                            changeGif('wake-word-detected.gif');
+                            changeGif('https://i.ibb.co/fn40PJm/I-hear-you.gif');
                             console.log("Wake word detected. Switching to listening mode.");
                         }
                     } else if (wakeWordDetected) {
@@ -72,7 +72,7 @@
 
             function sendInputToAPI() {
                 wakeWordDetected = false;
-                changeGif('sending-to-api.gif');
+                changeGif('https://i.ibb.co/B2JmjJc/Thinking.gif');
                 console.log("Sending to API:", currentMessage);
                 
                 fetch('https://api.deepinfra.com/v1/openai/chat/completions', {
@@ -94,7 +94,7 @@
             }
 
             function receiveAPIResponse(response) {
-                changeGif('responding.gif');
+                changeGif('https://i.ibb.co/WxbwbD1/Normal-gif.gif');
                 speak(response);
                 resetState();
             }
@@ -108,7 +108,7 @@
             function resetState() {
                 wakeWordDetected = false;
                 setTimeout(() => {
-                    changeGif('normal-state.gif');
+                    changeGif('https://i.ibb.co/WxbwbD1/Normal-gif.gif');
                 }, 5000); // Reset state after 5 seconds
             }
 
