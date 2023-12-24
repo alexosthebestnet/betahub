@@ -48,8 +48,7 @@
 
            function handleRecognitionResult(event) {
     for (let i = event.resultIndex; i < event.results.length; ++i) {
-        // Ensure that the transcript exists before trying to trim and replace
-        if (event.results[i][0] && event.results[i][0].transcript) {
+        if (event.results[i][0] && typeof event.results[i][0].transcript === 'string') {
             let transcript = event.results[i][0].transcript.trim().replace(/,/g, "");
             if (event.results[i].isFinal) {
                 console.log("Heard:", transcript);
@@ -58,13 +57,15 @@
                 if (transcript.toLowerCase().includes("hey hub")) {
                     wakeWordDetected = true;
                     isRecording = true;
-                    currentMessage = transcript.split("hey hub")[1].trim(); // Capture only after "Hey Hub"
+                    let splitTranscript = transcript.toLowerCase().split("hey hub");
+                    if (splitTranscript.length > 1) {
+                        currentMessage = splitTranscript[1].trim(); // Capture only after "Hey Hub"
+                    } else {
+                        currentMessage = ""; // Clear message if "Hey Hub" not followed by more speech
+                    }
                     changeGif('wake-word-detected.gif');
                     console.log("Wake word detected. Switching to listening mode.");
-                    continue; // Skip further processing in this iteration
-                }
-
-                if (wakeWordDetected) {
+                } else if (wakeWordDetected) {
                     currentMessage += ' ' + transcript;
                     changeGif('word-spoken.gif');
                     if (isRecording) {
