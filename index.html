@@ -81,10 +81,10 @@
                 isRecording = false;
                 changeGif('sending-to-api.gif');
                 console.log("Sending to API:", input);
-                let token = localStorage.getItem('OPENAI_API_KEY') || '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'; // Replace with your API key
+                let token = localStorage.getItem('OPENAI_API_KEY') || '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'; // Replace with your API key
                 fetch('https://api.openai.com/v1/chat/completions', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer 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` },
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer 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` },
                     body: JSON.stringify({ 
                         model: "gpt-3.5-turbo", 
                         messages: [systemMessage, { role: "user", content: input }] 
