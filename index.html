@@ -10,6 +10,7 @@
 </head>
 <body>
     <img id="status-gif" src="bootup.gif" alt="Status">
+        <div id="debug-output"></div>
 <script src="https://code.responsivevoice.org/responsivevoice.js?key=74a2wYAJ"></script>
 <script> 
 document.addEventListener("DOMContentLoaded", function() {
@@ -19,6 +20,25 @@ document.addEventListener("DOMContentLoaded", function() {
             let currentMessage = '';
             let interimTranscript = '';
             let silenceTimer = null;
+     let debugMode = false;
+        let touchCount = 0;
+        const debugOutputDiv = document.getElementById('debug-output');
+
+        document.addEventListener('touchend', function() {
+            touchCount++;
+            setTimeout(() => { touchCount = 0; }, 500); // Reset touch count after 500 ms
+
+            if (touchCount === 3) {
+                debugMode = !debugMode;
+                debugOutputDiv.style.display = debugMode ? 'block' : 'none';
+                console.log('Debug mode ' + (debugMode ? 'enabled' : 'disabled'));
+            }
+        });
+     function updateDebugOutput(message) {
+            if (debugMode) {
+                debugOutputDiv.textContent = message;
+            }
+        }
 
             setTimeout(() => { changeGif('normal-state.gif'); }, 3000); // Bootup for 3 seconds
 
@@ -51,6 +71,8 @@ document.addEventListener("DOMContentLoaded", function() {
                     let transcript = event.results[i][0].transcript.trim().replace(/,/g, "");
                     if (event.results[i].isFinal) {
                         console.log("Heard:", transcript);
+                        updateDebugOutput('Heard: ' + transcript); // Add this line
+
                         resetSilenceTimer(); // Reset timer on any final speech detected
 
                         if (wakeWordDetected) {
@@ -76,6 +98,8 @@ document.addEventListener("DOMContentLoaded", function() {
                 const today = new Date().toLocaleDateString();
                 changeGif('https://i.ibb.co/B2JmjJc/Thinking.gif');
                 console.log("Sending to API:", currentMessage);
+                updateDebugOutput('Sending to API: ' + currentMessage); // Add this line
+
                 
                 fetch('https://api.deepinfra.com/v1/openai/chat/completions', {
                     method: 'POST',
@@ -182,6 +206,7 @@ document.addEventListener("DOMContentLoaded", function() {
             function receiveAPIResponse(response) {
                 changeGif('https://i.ibb.co/WxbwbD1/Normal-gif.gif');
                 speak(response);
+                updateDebugOutput('AI response: ' + response); // Add this line
                 resetState();
             }
 
