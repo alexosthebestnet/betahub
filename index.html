@@ -90,7 +90,7 @@
                 let token = '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'; // Your API key
                 fetch('https://api.openai.com/v1/chat/completions', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer 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` },
                     body: JSON.stringify({ model: "gpt-3.5-turbo", messages: messageHistory })
                 })
                 .then(response => response.json())
