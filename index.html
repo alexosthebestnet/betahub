@@ -82,11 +82,11 @@
                 changeGif('sending-to-api.gif');
                 console.log("Sending to API:", input);
                 let token = localStorage.getItem('OPENAI_API_KEY') || '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'; // Replace with your API key
-                fetch('https://api.openai.com/v1/chat/completions', {
+                fetch('https://api.deepinfra.com/v1/openai/chat/completions', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer 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` },
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer HnO6SXFKeKem8tkzRo8f8LAbeWL42F6h` },
                     body: JSON.stringify({ 
-                        model: "gpt-3.5-turbo", 
+                        model: "Gryphe/MythoMax-L2-13b", 
                         messages: [systemMessage, { role: "user", content: input }] 
                     })
                 })
