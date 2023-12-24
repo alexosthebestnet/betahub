@@ -13,7 +13,6 @@
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             const statusGif = document.getElementById('status-gif');
-            const today = new Date().toLocaleDateString();
             let recognition;
             let wakeWordDetected = false;
             let currentMessage = '';
@@ -73,6 +72,7 @@
 
             function sendInputToAPI() {
                 wakeWordDetected = false;
+                const today = new Date().toLocaleDateString();
                 changeGif('https://i.ibb.co/B2JmjJc/Thinking.gif');
                 console.log("Sending to API:", currentMessage);
                 
