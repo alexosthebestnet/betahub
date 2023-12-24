@@ -81,7 +81,7 @@
                 isRecording = false;
                 changeGif('sending-to-api.gif');
                 console.log("Sending to API:", input);
-                let token = localStorage.getItem('OPENAI_API_KEY') || 'YOUR_OPENAI_API_KEY'; // Replace with your API key
+                let token = localStorage.getItem('OPENAI_API_KEY') || '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'; // Replace with your API key
                 fetch('https://api.openai.com/v1/chat/completions', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
