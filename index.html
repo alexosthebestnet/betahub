@@ -20,6 +20,7 @@ document.addEventListener("DOMContentLoaded", function() {
             let wakeWordDetected = false;
             let currentMessage = '';
             let interimTranscript = '';
+    recognition.interimResults = false; // For better performance on mobile
             let silenceTimer = null;
     let debugMode = false;
         let touchCount = 0;
