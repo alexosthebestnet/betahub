@@ -16,8 +16,9 @@
             let recognition;
             let isRecording = false;
             let wakeWordDetected = false;
-            let messageHistory = [{ role: "system", content: "You are ANT-3.5 a Large Langauge Model trained by a group of students at VISII middel school you were made by the student alex rose." }]; // System message
+            let messageHistory = [{ role: "system", content: "System message content here" }]; // System message
             let currentMessage = '';
+            let silenceTimer = null;
 
             setTimeout(() => { changeGif('normal-state.gif'); }, 3000); // Bootup for 3 seconds
 
@@ -46,24 +47,29 @@
             }
 
             function handleRecognitionResult(event) {
+                let currentTranscript = '';
+
                 for (let i = event.resultIndex; i < event.results.length; ++i) {
-                    let transcript = event.results[i][0].transcript.trim().replace(/,/g, "");
+                    currentTranscript = event.results[i][0].transcript.trim().replace(/,/g, "");
                     if (event.results[i].isFinal) {
-                        console.log("Heard:", transcript);
+                        console.log("Heard:", currentTranscript);
                         resetSilenceTimer(); // Reset timer on any final speech detected
 
+                        if (currentTranscript.toLowerCase().includes("hey hub")) {
+                            wakeWordDetected = true;
+                            isRecording = true;
+                            currentMessage = currentTranscript.split("hey hub")[1].trim(); // Capture only after "Hey Hub"
+                            changeGif('wake-word-detected.gif');
+                            console.log("Wake word detected. Switching to listening mode.");
+                            continue; // Skip further processing in this iteration
+                        }
+
                         if (wakeWordDetected) {
-                            currentMessage += ' ' + transcript;
+                            currentMessage += ' ' + currentTranscript;
                             changeGif('word-spoken.gif');
                             if (isRecording) {
                                 setTimeout(sendInputToAPI, 2000); // Send input after 2 seconds of pause
                             }
-                        } else if (transcript.toLowerCase().includes("hey hub")) {
-                            wakeWordDetected = true;
-                            isRecording = true;
-                            currentMessage = transcript.split("hey hub")[1].trim(); // Capture only after "Hey Hub"
-                            changeGif('wake-word-detected.gif');
-                            console.log("Wake word detected. Switching to listening mode.");
                         }
                     }
                 }
@@ -78,7 +84,7 @@
                     messageHistory = messageHistory.slice(-50);
                 }
 
-                let token = localStorage.getItem('OPENAI_API_KEY') || 'YOUR_OPENAI_API_KEY'; // Replace with your API key
+                let token = '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'; // Your API key
                 fetch('https://api.openai.com/v1/chat/completions', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
