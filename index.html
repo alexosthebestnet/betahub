@@ -59,7 +59,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 recognition.start();
                 resetSilenceTimer();
                 console.log("Speech recognition initialized.");
-                    recognition.interimResults = false; // Set this after initializing recognition
+                    recognition.interimResults = true; // Set this after initializing recognition
             }
 
             function restartSpeechRecognition() {
@@ -74,31 +74,31 @@ document.addEventListener("DOMContentLoaded", function() {
             }
 
             function handleRecognitionResult(event) {
-                for (let i = event.resultIndex; i < event.results.length; ++i) {
-                    let transcript = event.results[i][0].transcript.trim().replace(/,/g, "");
-                    if (event.results[i].isFinal) {
-                        console.log("Heard:", transcript);
-                        updateDebugOutput('Heard: ' + transcript); // Add this line
+    for (let i = event.resultIndex; i < event.results.length; ++i) {
+        let transcript = event.results[i][0].transcript.trim().replace(/,/g, "");
+        if (event.results[i].isFinal) {
+            console.log("Heard:", transcript);
+            resetSilenceTimer(); // Reset timer on any final speech detected
 
-                        resetSilenceTimer(); // Reset timer on any final speech detected
-
-                        if (wakeWordDetected) {
-                            currentMessage = interimTranscript + ' ' + transcript;
-                            changeGif('word-spoken.gif');
-                            setTimeout(sendInputToAPI, 2000); // Send input after 2 seconds of pause
-                            interimTranscript = ''; // Reset interim transcript after processing
-                        } else if (transcript.toLowerCase().includes("hey hub")) {
-                            wakeWordDetected = true;
-                            let splitTranscript = transcript.toLowerCase().split("hey hub");
-                            interimTranscript = splitTranscript.length > 1 ? splitTranscript[1].trim() : "";
-                            changeGif('https://i.ibb.co/fn40PJm/I-hear-you.gif');
-                            console.log("Wake word detected. Switching to listening mode.");
-                        }
-                    } else if (wakeWordDetected) {
-                        interimTranscript += transcript;
-                    }
-                }
+            if (wakeWordDetected) {
+                currentMessage = interimTranscript + ' ' + transcript;
+                changeGif('word-spoken.gif');
+                setTimeout(sendInputToAPI, 2000); // Send input after 2 seconds of pause
+                interimTranscript = ''; // Reset interim transcript after processing
+            } else if (transcript.toLowerCase().includes("hey hub") || transcript.toLowerCase().includes("air parrot") || transcript.toLowerCase().includes("hey")) {
+                wakeWordDetected = true;
+                let wakeWord = transcript.toLowerCase().includes("hey hub") ? "hey hub" :
+                               transcript.toLowerCase().includes("air parrot") ? "air parrot" : "hey";
+                let splitTranscript = transcript.toLowerCase().split(wakeWord);
+                interimTranscript = splitTranscript.length > 1 ? splitTranscript[1].trim() : "";
+                changeGif('https://i.ibb.co/fn40PJm/I-hear-you.gif');
+                console.log("Wake word detected. Switching to listening mode.");
             }
+        } else if (wakeWordDetected) {
+            interimTranscript += transcript;
+        }
+    }
+}
 
             function sendInputToAPI() {
                 wakeWordDetected = false;
