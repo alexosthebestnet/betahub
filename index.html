@@ -13,12 +13,11 @@
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             const statusGif = document.getElementById('status-gif');
-            const systemMessage = { role: "system", content: "Your custom system message here" }; // System message
             let recognition;
-            let isRecording = false;
             let wakeWordDetected = false;
-            let speechAfterWakeWord = '';
-            let silenceTimer;
+            let currentMessage = '';
+            let interimTranscript = '';
+            let silenceTimer = null;
 
             setTimeout(() => { changeGif('normal-state.gif'); }, 3000); // Bootup for 3 seconds
 
@@ -47,55 +46,51 @@
             }
 
             function handleRecognitionResult(event) {
-                let currentTranscript = '';
-
                 for (let i = event.resultIndex; i < event.results.length; ++i) {
-                    currentTranscript += event.results[i][0].transcript.trim().replace(/,/g, "");
+                    let transcript = event.results[i][0].transcript.trim().replace(/,/g, "");
                     if (event.results[i].isFinal) {
-                        console.log("Heard:", currentTranscript);
+                        console.log("Heard:", transcript);
                         resetSilenceTimer(); // Reset timer on any final speech detected
 
-                        if (currentTranscript.toLowerCase().includes("hey hub")) {
+                        if (wakeWordDetected) {
+                            currentMessage = interimTranscript + ' ' + transcript;
+                            changeGif('word-spoken.gif');
+                            setTimeout(sendInputToAPI, 2000); // Send input after 2 seconds of pause
+                            interimTranscript = ''; // Reset interim transcript after processing
+                        } else if (transcript.toLowerCase().includes("hey hub")) {
                             wakeWordDetected = true;
-                            isRecording = true;
+                            let splitTranscript = transcript.toLowerCase().split("hey hub");
+                            interimTranscript = splitTranscript.length > 1 ? splitTranscript[1].trim() : "";
                             changeGif('wake-word-detected.gif');
                             console.log("Wake word detected. Switching to listening mode.");
-                            speechAfterWakeWord = currentTranscript.substring(currentTranscript.toLowerCase().indexOf("hey hub") + 7).trim();
-                            continue; // Skip further processing in this iteration
                         }
-
-                        if (wakeWordDetected) {
-                            speechAfterWakeWord += ' ' + currentTranscript;
-                            changeGif('word-spoken.gif');
-                            setTimeout(() => {
-                                if (isRecording) {
-                                    sendInputToAPI(speechAfterWakeWord);
-                                }
-                            }, 2000); // Send input after 2 seconds of pause
-                        }
+                    } else if (wakeWordDetected) {
+                        interimTranscript += transcript;
                     }
                 }
             }
 
-            function sendInputToAPI(input) {
-                isRecording = false;
+            function sendInputToAPI() {
+                wakeWordDetected = false;
                 changeGif('sending-to-api.gif');
-                console.log("Sending to API:", input);
-                let token = localStorage.getItem('OPENAI_API_KEY') || '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'; // Replace with your API key
+                console.log("Sending to API:", currentMessage);
+                
                 fetch('https://api.deepinfra.com/v1/openai/chat/completions', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer HnO6SXFKeKem8tkzRo8f8LAbeWL42F6h` },
                     body: JSON.stringify({ 
                         model: "Gryphe/MythoMax-L2-13b", 
-                        messages: [systemMessage, { role: "user", content: input }] 
+                        messages: [{ role: "system", content: "System message content here" }, { role: "user", content: currentMessage }] 
                     })
                 })
                 .then(response => response.json())
                 .then(data => {
-                    console.log("API response:", data.choices[0].message.content);
-                    receiveAPIResponse(data.choices[0].message.content);
+                    let aiResponse = data.choices[0].message.content;
+                    console.log("API response:", aiResponse);
+                    receiveAPIResponse(aiResponse);
                 })
                 .catch(error => console.error('Error:', error));
+                currentMessage = ''; // Reset currentMessage after sending
             }
 
             function receiveAPIResponse(response) {
@@ -112,7 +107,6 @@
 
             function resetState() {
                 wakeWordDetected = false;
-                speechAfterWakeWord = '';
                 setTimeout(() => {
                     changeGif('normal-state.gif');
                 }, 5000); // Reset state after 5 seconds
@@ -121,7 +115,7 @@
             function resetSilenceTimer() {
                 clearTimeout(silenceTimer);
                 silenceTimer = setTimeout(() => {
-                    if (!isRecording) {
+                    if (!wakeWordDetected) {
                         recognition.stop();
                         setTimeout(() => {
                             recognition.start();
