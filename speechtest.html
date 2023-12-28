@@ -3,53 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Speech Recognition with Artyom.js</title>
+    <title>Speech Dictation with Artyom.js</title>
     <script src="https://cdn.jsdelivr.net/npm/artyom.js/build/artyom.window.min.js"></script>
 </head>
 <body>
-    <h1>Speech Recognition with Artyom.js</h1>
-    <button id="start-recognition">Start Recognition</button>
-    <button id="stop-recognition">Stop Recognition</button>
-    <p id="output"></p>
+    <h1>Speech Dictation with Artyom.js</h1>
+    <button id="start-recognition">Start Dictation</button>
+    <button id="stop-recognition">Stop Dictation</button>
+    <div id="output"></div>
 
     <script>
         window.onload = function() {
             const artyom = new Artyom();
+            let dictation;
 
-            // Function to start recognition
-            function startRecognition() {
-                artyom.initialize({
-                    lang: "en-GB", // Set the language
-                    continuous: true, // Listen forever
-                    listen: true, // Start recognizing
-                    debug: true, // Show messages in the console
-                    speed: 1 // Talk normally
-                }).then(() => {
-                    console.log("Artyom has been successfully initialized");
-                }).catch((err) => {
-                    console.error("Artyom couldn't be initialized: ", err);
+            // Function to start dictation
+            function startDictation() {
+                dictation = new Artyom.ArtyomDictation({
+                    lang: "en-US",
+                    continuous: true, // Keep listening without stopping
+                    onResult: function(text) {
+                        // Display the recognized text
+                        document.getElementById('output').innerHTML = text;
+                    },
+                    onStart: function() {
+                        console.log("Dictation started");
+                    },
+                    onEnd: function() {
+                        console.log("Dictation stopped");
+                    }
                 });
+
+                dictation.start();
             }
 
-            // Function to stop recognition
-            function stopRecognition() {
-                artyom.fatality().then(() => {
-                    console.log("Artyom has been stopped");
-                });
-            }
-
-            // Handle recognized text
-            artyom.redirectRecognizedTextOutput(function(recognized, isFinal) {
-                if (isFinal) {
-                    document.getElementById('output').innerText = recognized;
-                } else {
-                    console.log(recognized);
+            // Function to stop dictation
+            function stopDictation() {
+                if (dictation) {
+                    dictation.stop();
                 }
-            });
+            }
 
             // Event listeners for buttons
-            document.getElementById('start-recognition').addEventListener('click', startRecognition);
-            document.getElementById('stop-recognition').addEventListener('click', stopRecognition);
+            document.getElementById('start-recognition').addEventListener('click', startDictation);
+            document.getElementById('stop-recognition').addEventListener('click', stopDictation);
         };
     </script>
 </body>
