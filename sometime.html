@@ -78,183 +78,82 @@
 <script src="https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/dist/face-api.js"></script>
  <script src="https://code.responsivevoice.org/responsivevoice.js?key=74a2wYAJ"></script>
     <script>
-        let listeningForCommand = false;
-let lastTranscript = '';
+       // Global variables
+let listeningForCommand = false;
 const wakeWord = "hey hub";
 const silenceDelay = 2000; // 2 seconds
 let silenceTimer;
 let messages = [];
 const maxMessages = 7; // Maximum number of messages to keep
 
-// Array of commands and corresponding actions
-const commandActions = [
-    {
-        command: "weather",
-        action: fetchWeather,
-        gif: 'https://i.ibb.co/gRSdL49/Weather-Plug-in-gif.gif' // GIF for the weather command
-    },
-    {
-        command: "joke",
-        action: tellJoke,
-        gif: 'https://i.ibb.co/album/XYZ123/Joke-Plugin.gif' // GIF for the joke command
-    },
-    {
-        command: "random time",
-        action: tellTimeInRandomLocation,
-        gif: "https://i.ibb.co/your-gif-url.gif"
+// Initialize Artyom for wake word detection
+let artyom = new Artyom();
+
+// Artyom command for wake word
+artyom.addCommands({
+    indexes: [wakeWord],
+    action: function(i) {
+        listeningForCommand = true;
+        setGif('https://i.ibb.co/fn40PJm/I-hear-you.gif');
+        addSystemMessage();
+        activateDictation();
     }
-];
+});
 
+function activateDictation() {
+    // Stop listening for wake word
+    artyom.fatality();
 
-      function getRandomLocation() {
-    const locations = [
-        { name: 'New York', utcOffset: -5 },
-        { name: 'London', utcOffset: 0 },
-        { name: 'Tokyo', utcOffset: 9 },
-        { name: 'Sydney', utcOffset: 11 },
-        { name: 'Paris', utcOffset: 1 },
-        { name: 'Moscow', utcOffset: 3 }
-    ];
-    return locations[Math.floor(Math.random() * locations.length)];
+    let UserDictation = artyom.newDictation({
+        continuous: true,
+        onResult: function(text) {
+            if (listeningForCommand) {
+                processCommand(text);
+            }
+        },
+        onStart: function() {
+            console.log("Dictation started");
+        },
+        onEnd: function() {
+            console.log("Dictation stopped");
+            // Restart listening for wake word
+            artyom.initialize({
+                lang: "en-GB",
+                continuous: true,
+                listen: true,
+                debug: true
+            });
+        }
+    });
+
+    UserDictation.start();
 }
 
-function getCurrentTime(utcOffset) {
-    const now = new Date();
-    const localTime = new Date(now.getTime() + utcOffset * 3600 * 1000);
-    return localTime.toTimeString().split(' ')[0]; // Extracts only the time part
+function processCommand(command) {
+    listeningForCommand = false;
+    setGif('https://i.ibb.co/B2JmjJc/Thinking.gif');
+    sendCommandToAPI(command);
 }
-
-function tellTimeInRandomLocation() {
-    const randomLocation = getRandomLocation();
-    const currentTime = getCurrentTime(randomLocation.utcOffset);
-    return `The current time in ${randomLocation.name} is ${currentTime}.`;
-}
-
-
-function fetchWeather() {
-    // Placeholder for weather fetching logic
-    console.log("Fetching weather data...");
-    // Implement the logic to fetch and display weather data here
-}
-
-      function startRecognition() {
-    navigator.mediaDevices.getUserMedia({ audio: true })
-        .then(function(stream) {
-            recognition.stream = stream;
-            recognition.start();
-        })
-        .catch(function(error) {
-            console.error('Error accessing microphone:', error);
-        });
-}
-
-      
-const jokes = [
-    "Why don't scientists trust atoms? Because they make up everything!",
-    "Why did the scarecrow win an award? Because he was outstanding in his field!",
-    "I'm reading a book on anti-gravity. It's impossible to put down!",
-    "Parallel lines have so much in common. It’s a shame they’ll never meet.",
-    "My boss told me to have a good day. So, I went home.",
-    "Why don't eggs tell jokes? They'd crack each other up.",
-    "I'd tell you a chemistry joke but I know I wouldn't get a reaction.",
-    "Why did the bicycle collapse? It was two-tired!",
-    "Did you hear about the mathematician who’s afraid of negative numbers? He'll stop at nothing to avoid them.",
-    "Why don't programmers like nature? It has too many bugs."
-];
-
-function tellJoke() {
-    const randomIndex = Math.floor(Math.random() * jokes.length);
-    return jokes[randomIndex];
-}
-      async function fetchRandomFact() {
-    const facts = ['Honey never spoils.', 'Octopuses have three hearts.', "Bananas are berries, but strawberries aren't.", "A group of flamingos is called a 'flamboyance'.", 'Cows have best friends and get stressed when separated.', 'A bolt of lightning contains enough energy to toast 100,000 slices of bread.', 'The Eiffel Tower can be 15 cm taller during the summer.', 'Polar bear skin is black, and their fur is not white but transparent.', 'The heart of a shrimp is located in its head.', 'A snail can sleep for three years.', 'The fingerprints of a koala are so indistinguishable from humans that they have on occasion been confused at a crime scene.', 'A single cloud can weigh more than 1 million pounds.', "A human could swim through a blue whale's veins.", 'Horses and cows sleep while standing up.', 'Butterflies taste with their feet.', 'The inventor of the frisbee was cremated and made into a frisbee after he died.', 'Hot water will turn into ice faster than cold water.', 'Gorillas burp when they are happy.', 'In 2015, more people were killed from injuries caused by taking a selfie than by shark attacks.', 'The total weight of all the ants on Earth is about the same as the weight of all the humans on the planet.', 'On Jupiter and Saturn, it rains diamonds.', 'Starfish are not fish, and killer whales are not whales.', 'A group of crows is called a murder.', 'The unicorn is the national animal of Scotland.', 'There are more possible iterations of a game of chess than there are atoms in the known universe.', 'The longest time between two twins being born is 87 days.', "The world's deepest postbox is in Susami Bay in Japan. It's 10 meters underwater.", 'In 2007, an American man named Corey Taylor tried to fake his own death to get out of his cell phone contract without a penalty.', "The oldest 'your mom' joke was discovered on a 3,500-year-old Babylonian tablet.", 'In 2016, the longest-ever echo in a man-made structure was recorded in an underground fuel depot constructed in Scotland before World War II; the echo lasted 112 seconds.', 'The first oranges weren’t orange, they were green.', 'In France, it is legal to marry a dead person.', 'Russia has a larger surface area than Pluto.', 'There is an opera house on the U.S.–Canada border where the stage is in one country and half the audience is in another.', 'The shortest war in history was between Britain and Zanzibar on August 27, 1896. Zanzibar surrendered after 38 minutes.', "A cow-bison hybrid is called a 'beefalo'.", 'Johnny Appleseed’s fruits were not eaten but used to make hard cider.', "Scotland has 421 words for 'snow'.", "You can't hum while holding your nose closed.", 'The longest English word is 189,819 letters long.', 'Cats have fewer toes on their back paws.', 'Kleenex tissues were originally intended for gas masks.', 'The first computer was invented in the 1940s.', 'Space smells like seared steak.', 'The longest wedding veil was the same length as 63.5 football fields.', 'The unicorn is the national animal of Scotland.', 'Some cats are allergic to people.', 'M&M stands for Mars and Murrie.', 'The first oranges weren’t orange.', 'Most Disney characters wear gloves to keep animation simple.'];
-
-    const randomIndex = Math.floor(Math.random() * facts.length);
-    return facts[randomIndex];
-}
-
 
 window.onload = function() {
     const savedMessages = localStorage.getItem('messages');
     if (savedMessages) {
         messages = JSON.parse(savedMessages);
-      startRecognition()
-       loadModels();
-        initShakeDetection()
+        loadModels();
+        initShakeDetection();
     }
-    setGif('https://i.ibb.co/WxbwbD1/Normal-gif.gif'); // Set default GIF
-    updateDateTime(); // Initialize date and time
+    setGif('https://i.ibb.co/WxbwbD1/Normal-gif.gif');
+    updateDateTime();
 
-    // Speak a greeting message
-    responsiveVoice.speak("oh. im back! ", "Australian Male", {
-        onstart: function() {
-            // You can set a specific GIF for the greeting here if you like
-            setGif('https://i.ibb.co/Lp3XTHs/Smiling-eyes-gif.gif');
-        },
-        onend: function() {
-            setGif('https://i.ibb.co/WxbwbD1/Normal-gif.gif');
-        }
+    // Start listening for wake word
+    artyom.initialize({
+        lang: "en-GB",
+        continuous: true,
+        listen: true,
+        debug: true
     });
 };
 
-let recognition;
-if ('SpeechRecognition' in window) {
-    recognition = new SpeechRecognition();
-} else if ('webkitSpeechRecognition' in window) {
-    recognition = new webkitSpeechRecognition();
-} else {
-    console.error('Your browser does not support SpeechRecognition.');
-}
-
-recognition.lang = 'en-US'; // Set your preferred language
-recognition.continuous = true;
-recognition.interimResults = true;
-
-recognition.onresult = function(event) {
-    clearTimeout(silenceTimer);
-
-    const currentTranscript = Array.from(event.results)
-                                   .map(result => result[0].transcript)
-                                   .join('');
-
-    if (!listeningForCommand && currentTranscript.toLowerCase().includes(wakeWord)) {
-        listeningForCommand = true;
-        lastTranscript = '';
-        setGif('https://i.ibb.co/fn40PJm/I-hear-you.gif');
-        addSystemMessage();
-    } else if (listeningForCommand) {
-        lastTranscript = currentTranscript;
-        silenceTimer = setTimeout(() => {
-            const commandAfterWakeWord = lastTranscript.substring(lastTranscript.toLowerCase().indexOf(wakeWord) + wakeWord.length).trim();
-            if (commandAfterWakeWord) {
-                setGif('https://i.ibb.co/B2JmjJc/Thinking.gif');
-                sendCommandToAPI(commandAfterWakeWord);
-            } else {
-                setGif('https://i.ibb.co/x1XZHHm/Huh.gif');
-            }
-            listeningForCommand = false;
-            recognition.stop(); // Stop recognition while processing the command
-        }, silenceDelay);
-    }
-};
-
-recognition.onerror = function(event) {
-    if (event.error === 'no-speech') {
-        console.error('No speech detected.');
-        restartRecognition();
-    }
-};
-
-function restartRecognition() {
-    if (recognition) {
-        recognition.stop();
-        setTimeout(() => {
-            startRecognition();
-        }, 1000);
-    }
-}
-
-recognition.start();
 
 function addSystemMessage() {
     const today = new Date().toLocaleDateString();
