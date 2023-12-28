@@ -14,39 +14,29 @@
 
     <script>
         window.onload = function() {
-            const artyom = new Artyom();
-            let dictation;
-
-            // Function to start dictation
-            function startDictation() {
-                dictation = new Artyom.ArtyomDictation({
-                    lang: "en-US",
-                    continuous: true, // Keep listening without stopping
-                    onResult: function(text) {
-                        // Display the recognized text
-                        document.getElementById('output').innerHTML = text;
-                    },
-                    onStart: function() {
-                        console.log("Dictation started");
-                    },
-                    onEnd: function() {
-                        console.log("Dictation stopped");
-                    }
-                });
-
-                dictation.start();
-            }
-
-            // Function to stop dictation
-            function stopDictation() {
-                if (dictation) {
-                    dictation.stop();
+            var settings = {
+                continuous: true, // Don't stop unless stopped manually
+                onResult: function(text) {
+                    // Show the Recognized text
+                    document.getElementById('output').innerHTML = text;
+                },
+                onStart: function() {
+                    console.log("Dictation started by the user");
+                },
+                onEnd: function() {
+                    console.log("Dictation stopped by the user");
                 }
-            }
+            };
 
-            // Event listeners for buttons
-            document.getElementById('start-recognition').addEventListener('click', startDictation);
-            document.getElementById('stop-recognition').addEventListener('click', stopDictation);
+            var UserDictation = artyom.newDictation(settings);
+
+            document.getElementById('start-recognition').addEventListener('click', function(){
+                UserDictation.start();
+            });
+
+            document.getElementById('stop-recognition').addEventListener('click', function(){
+                UserDictation.stop();
+            });
         };
     </script>
 </body>
