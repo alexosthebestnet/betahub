@@ -14,21 +14,27 @@
 
     <script>
         window.onload = function() {
+            // Check if Artyom.js library is loaded
+            if (typeof Artyom === 'undefined') {
+                console.error('Artyom.js is not loaded.');
+                return;
+            }
+
             var settings = {
-                continuous: true, // Don't stop unless stopped manually
+                continuous: true, // Enable continuous dictation
                 onResult: function(text) {
-                    // Show the Recognized text
+                    // Display the recognized text
                     document.getElementById('output').innerHTML = text;
                 },
                 onStart: function() {
-                    console.log("Dictation started by the user");
+                    console.log("Dictation started");
                 },
                 onEnd: function() {
-                    console.log("Dictation stopped by the user");
+                    console.log("Dictation stopped");
                 }
             };
 
-            var UserDictation = artyom.newDictation(settings);
+            var UserDictation = new Artyom().newDictation(settings);
 
             document.getElementById('start-recognition').addEventListener('click', function(){
                 UserDictation.start();
