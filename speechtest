@@ -11,11 +11,11 @@
     <button id="start-recognition">Start Recognition</button>
     <button id="stop-recognition">Stop Recognition</button>
     <p id="output"></p>
-
+</script>
 window.onload = function() {
     const artyom = new Artyom();
 
-    // Function to start recognition
+// Function to start recognition
     function startRecognition() {
         artyom.initialize({
             lang: "en-US", // Set the language
@@ -50,5 +50,6 @@ window.onload = function() {
     document.getElementById('start-recognition').addEventListener('click', startRecognition);
     document.getElementById('stop-recognition').addEventListener('click', stopRecognition);
 };
+</script>
 </body>
 </html>
