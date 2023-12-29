@@ -81,6 +81,7 @@
 <script>
        // Global variables
 // Global variables
+// Global variables
 let isListeningForCommand = false;
 const wakeWord = "hey hub";
 let UserDictation;
@@ -133,7 +134,6 @@ function activateDictationMode() {
 
 function processCommand(command) {
     setGif('https://i.ibb.co/B2JmjJc/Thinking.gif');
-    // Process the command here
     sendCommandToAPI(command);
 }
 
@@ -150,12 +150,12 @@ function initializeApp() {
     const savedMessages = localStorage.getItem('messages');
     if (savedMessages) {
         messages = JSON.parse(savedMessages);
-        // Load models, initialize shake detection, etc.
     }
     setGif('https://i.ibb.co/WxbwbD1/Normal-gif.gif');
     updateDateTime();
     setupArtyomCommands();
     resetArtyomListening();
+    initShakeDetection();
 }
 
 window.onload = initializeApp;
