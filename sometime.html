@@ -80,36 +80,42 @@
 <script src="https://cdn.jsdelivr.net/npm/artyom.js/build/artyom.window.min.js"></script>
 <script>
        // Global variables
-let listeningForCommand = false;
+// Global variables
+let isListeningForCommand = false;
 const wakeWord = "hey hub";
-const silenceDelay = 2000; // 2 seconds
-let silenceTimer;
+let UserDictation;
 let messages = [];
 const maxMessages = 7; // Maximum number of messages to keep
 
 // Initialize Artyom for wake word detection
 let artyom = new Artyom();
 
-// Artyom command for wake word
-artyom.addCommands({
-    indexes: [wakeWord],
-    action: function(i) {
-        listeningForCommand = true;
-        setGif('https://i.ibb.co/fn40PJm/I-hear-you.gif');
-        addSystemMessage();
-        activateDictation();
-    }
-});
+function setupArtyomCommands() {
+    // Add command for wake word
+    artyom.addCommands({
+        indexes: [wakeWord],
+        action: function() {
+            console.log("Wake word recognized");
+            isListeningForCommand = true;
+            setGif('https://i.ibb.co/fn40PJm/I-hear-you.gif');
+            activateDictationMode();
+        }
+    });
+}
 
-function activateDictation() {
-    // Stop listening for wake word
+function activateDictationMode() {
+    // Stop Artyom from listening to wake word
     artyom.fatality();
 
-    let UserDictation = artyom.newDictation({
+    // Initialize Dictation
+    UserDictation = artyom.newDictation({
         continuous: true,
         onResult: function(text) {
-            if (listeningForCommand) {
+            if (isListeningForCommand) {
+                console.log("Command received:", text);
                 processCommand(text);
+                isListeningForCommand = false;
+                resetArtyomListening();
             }
         },
         onStart: function() {
@@ -117,13 +123,8 @@ function activateDictation() {
         },
         onEnd: function() {
             console.log("Dictation stopped");
-            // Restart listening for wake word
-            artyom.initialize({
-                lang: "en-GB",
-                continuous: true,
-                listen: true,
-                debug: true
-            });
+            isListeningForCommand = false;
+            resetArtyomListening();
         }
     });
 
@@ -131,29 +132,34 @@ function activateDictation() {
 }
 
 function processCommand(command) {
-    listeningForCommand = false;
     setGif('https://i.ibb.co/B2JmjJc/Thinking.gif');
+    // Process the command here
     sendCommandToAPI(command);
 }
 
-window.onload = function() {
-    const savedMessages = localStorage.getItem('messages');
-    if (savedMessages) {
-        messages = JSON.parse(savedMessages);
-        loadModels();
-        initShakeDetection();
-    }
-    setGif('https://i.ibb.co/WxbwbD1/Normal-gif.gif');
-    updateDateTime();
-
-    // Start listening for wake word
+function resetArtyomListening() {
     artyom.initialize({
         lang: "en-GB",
         continuous: true,
         listen: true,
         debug: true
     });
-};
+}
+
+function initializeApp() {
+    const savedMessages = localStorage.getItem('messages');
+    if (savedMessages) {
+        messages = JSON.parse(savedMessages);
+        // Load models, initialize shake detection, etc.
+    }
+    setGif('https://i.ibb.co/WxbwbD1/Normal-gif.gif');
+    updateDateTime();
+    setupArtyomCommands();
+    resetArtyomListening();
+}
+
+window.onload = initializeApp;
+
 
 
 function addSystemMessage() {
