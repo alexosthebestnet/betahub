@@ -79,7 +79,8 @@
 <script src="https://code.responsivevoice.org/responsivevoice.js?key=74a2wYAJ"></script>
 <script src="https://cdn.jsdelivr.net/npm/artyom.js/build/artyom.window.min.js"></script>
 <script>
-       // Global variables
+    // Global variables
+// Global variables
 // Global variables
 // Global variables
 let isListeningForCommand = false;
@@ -87,6 +88,8 @@ const wakeWord = "hey hub";
 let UserDictation;
 let messages = [];
 const maxMessages = 7; // Maximum number of messages to keep
+let lastCommandTime = 0;
+const commandDelay = 2000; // 2 seconds delay after the last speech input
 
 // Initialize Artyom for wake word detection
 let artyom = new Artyom();
@@ -112,12 +115,17 @@ function activateDictationMode() {
     UserDictation = artyom.newDictation({
         continuous: true,
         onResult: function(text) {
-            if (isListeningForCommand) {
-                console.log("Command received:", text);
-                processCommand(text);
-                isListeningForCommand = false;
-                resetArtyomListening();
-            }
+            lastCommandTime = new Date().getTime();
+            setTimeout(() => {
+                if (new Date().getTime() - lastCommandTime >= commandDelay) {
+                    if (isListeningForCommand) {
+                        console.log("Command received:", text);
+                        processCommand(text);
+                        isListeningForCommand = false;
+                        resetArtyomListening();
+                    }
+                }
+            }, commandDelay);
         },
         onStart: function() {
             console.log("Dictation started");
@@ -133,6 +141,7 @@ function activateDictationMode() {
 }
 
 function processCommand(command) {
+    // Process the command here
     setGif('https://i.ibb.co/B2JmjJc/Thinking.gif');
     sendCommandToAPI(command);
 }
