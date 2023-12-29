@@ -89,17 +89,6 @@ let messages = [];
 const maxMessages = 7; // Maximum number of messages to keep
 let artyom = new Artyom(); // Initialize Artyom for wake word detection
 
-function setupArtyomCommands() {
-    artyom.addCommands({
-        indexes: [wakeWord],
-        action: () => {
-            console.log("Wake word recognized");
-            isListeningForCommand = true;
-            setGif('https://i.ibb.co/fn40PJm/I-hear-you.gif');
-            activateDictationMode();
-        }
-    });
-}
 
 function activateDictationMode() {
     artyom.fatality(); // Stop Artyom from listening to wake word
@@ -136,11 +125,31 @@ function startArtyom() {
         listen: true,
         debug: true
     }).then(() => {
-        console.log("Artyom has been successfully initialized");
+        console.log("Artyom has been successfully initialized and listening");
     }).catch(err => {
         console.error("Artyom couldn't be initialized", err);
     });
 }
+
+function setupArtyomCommands() {
+    console.log("Setting up Artyom commands");
+    artyom.addCommands({
+        indexes: [wakeWord],
+        action: () => {
+            console.log("Wake word recognized");
+            isListeningForCommand = true;
+            setGif('https://i.ibb.co/fn40PJm/I-hear-you.gif');
+            activateDictationMode();
+        }
+    });
+    console.log("Artyom commands set up");
+}
+
+window.onload = () => {
+    console.log("Initializing application");
+    initializeApp();
+};
+
 
 function initializeApp() {
     if (localStorage.getItem('messages')) {
