@@ -120,6 +120,7 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 }
 
+    let speakQueue = [];
 
             function sendInputToAPI() {
                 wakeWordDetected = false;
@@ -219,8 +220,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
     21. Prompt: Are you a boy or a girl?
         Response: I’m a boy... but for robots, it’s different because robots don’t have boy parts or girl parts. Just robot parts. So yes and no.` }, { role: "user", content: currentMessage }] 
-                    })
-                })
+                    }
+                }
                 .then(response => response.json())
                 .then(data => {
                     let aiResponse = data.choices[0].message.content;
@@ -232,43 +233,63 @@ document.addEventListener("DOMContentLoaded", function() {
             }
 
             function receiveAPIResponse(response) {
-                changeGif('https://i.ibb.co/WxbwbD1/Normal-gif.gif');
-                speak(response);
-                updateDebugOutput('AI response: ' + response); // Add this line
-                resetState();
-            }
+    changeGif('https://i.ibb.co/WxbwbD1/Normal-gif.gif');
+    enqueueSpeech(response);
+    resetState();
+function enqueueSpeech(text) {
+    speakQueue.push(text);
+    if (speakQueue.length === 1) {
+        speak();
+    }
+}
 
-           function speak(text) {
-            console.log("Speaking:", text);
-            responsiveVoice.speak(text, "Australian Male"); // Australian Male voice
-        
-            }
+function speak() {
+    if (speakQueue.length === 0) {
+        return;
+    }
+    let text = speakQueue[0];
+    console.log("Speaking:", text);
 
-            function resetState() {
-                wakeWordDetected = false;
-                setTimeout(() => {
-                    changeGif('https://i.ibb.co/WxbwbD1/Normal-gif.gif');
-                }, 5000); // Reset state after 5 seconds
+    responsiveVoice.speak(text, "Australian Male", {
+        onend: function() {
+            // Remove the spoken text from the queue
+            speakQueue.shift();
+            // If there are more items in the queue, continue speaking
+            if (speakQueue.length > 0) {
+                speak();
             }
+        },
+        onerror: function(error) {
+            console.error("Speech Synthesis Error:", error);
+            // Remove the problematic text from the queue
+            speakQueue.shift();
+            // Try to continue with the next item in the queue
+            if (speakQueue.length > 0) {
+                speak();
+            }
+        }
+    });
+}
 
-            function resetSilenceTimer() {
-                clearTimeout(silenceTimer);
-                silenceTimer = setTimeout(() => {
-                    if (!wakeWordDetected) {
-                        recognition.stop();
-                        setTimeout(() => {
-                            recognition.start();
-                            changeGif('normal-state.gif');
-                            console.log("No speech detected. Resetting.");
-                        }, 100);
-                    }
-                }, 30000); // 30 seconds of silence
-            }
+function resetState() {
+    wakeWordDetected = false;
+    setTimeout(() => {
+        changeGif('https://i.ibb.co/WxbwbD1/Normal-gif.gif');
+    }, 5000); // Reset state after 5 seconds
+}
 
-            function changeGif(gifName) {
-                statusGif.src = gifName;
-                console.log("Gif changed to:", gifName);
-            }
+// Call this function to change the GIF image
+function changeGif(newGifUrl) {
+    let gifElement = document.getElementById('statusGif');
+    if (gifElement) {
+        gifElement.src = newGifUrl;
+    }
+}
+
+// Use this function to update the debug output
+function updateDebugOutput(message) {
+    console.log(message); // Or update an element on your page with the message
+}
 
             initializeSpeechRecognition();
         });
