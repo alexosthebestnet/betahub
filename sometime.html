@@ -167,9 +167,13 @@ function activateDictationMode() {
         onResult: text => {
             if (isListeningForCommand) {
                 console.log("Command received:", text);
-                processCommand(text);
-                isListeningForCommand = false;
-                startArtyom();
+                // Reset and start a shorter timer when speech is detected
+                clearTimeout(speechTimer);
+                speechTimer = setTimeout(() => {
+                    processCommand(text);
+                    isListeningForCommand = false;
+                    startArtyom();
+                }, 2000); // 2 seconds wait time after speech ends
             }
         },
         onStart: () => console.log("Dictation started"),
@@ -187,6 +191,8 @@ function processCommand(command) {
     // Process the command here
     sendCommandToAPI(command);
 }
+
+let speechTimer;
 
 function startArtyom() {
     artyom.initialize({
@@ -210,11 +216,21 @@ function setupArtyomCommands() {
             isListeningForCommand = true;
             setGif('https://i.ibb.co/fn40PJm/I-hear-you.gif');
             activateDictationMode();
+
+            // Reset and start the speech timer
+            clearTimeout(speechTimer);
+            speechTimer = setTimeout(() => {
+                if (isListeningForCommand) {
+                    processCommand("");
+                    isListeningForCommand = false;
+                    startArtyom();
+                }
+            }, 8000); // 8 seconds wait time for additional speech
         }
     });
     console.log("Artyom commands set up");
 }
-
+  
 window.onload = () => {
     console.log("Initializing application");
     initializeApp();
@@ -281,6 +297,13 @@ function sendCommandToAPI(command) {
         setGif('https://i.ibb.co/QNn0wYP/Oh-no.gif');
         document.getElementById('status').textContent = error.message;
     });
+   // Check if the response ends with a question mark and activate dictation mode
+        if (reply.trim().endsWith("?")) {
+            console.log("Response ends with a question mark. Activating dictation mode.");
+            isListeningForCommand = true;
+            activateDictationMode();
+        }
+    })
 }
 
 function trimMessages() {
