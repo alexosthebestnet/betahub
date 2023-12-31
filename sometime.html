@@ -246,17 +246,17 @@ function sendCommandToAPI(command) {
     trimMessages();
 
     // Decode the base64 encoded API key
-    const base64ApiKey = "SG5PNlNYRktlS2VtOHRreiBSbzhmOExBYmVXTDQyRjZo"; // Your base64 encoded API key
+    const base64ApiKey = "c2stTGhkRDZqUVI4OEFoaVJabEptbTVUM0JsYmtGSkNjcGJpc0hCRmZ0dTMzMzlzd1px"; // Your base64 encoded API key
     const apiKey = atob(base64ApiKey);
 
-    fetch("https://api.deepinfra.com/v1/openai/chat/completions", {
+    fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
             "Authorization": "Bearer " + apiKey
         },
         body: JSON.stringify({
-            "model": "openchat/openchat_3.5",
+            "model": "gpt-3.5-turbo",
             "messages": messages
         })
     })
