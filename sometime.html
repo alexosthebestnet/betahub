@@ -34,6 +34,19 @@
     right: 10px;
     text-align: right;
 }
+  .reminder-notification {
+    position: fixed;
+    top: 20%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    text-align: center;
+    z-index: 100;
+}
+
 
 #info-widgets p {
     margin: 5px;
@@ -100,6 +113,10 @@ const commandActions = [
         gif: 'https://i.ibb.co/album/XYZ123/Joke-Plugin.gif' // GIF for the joke command
     },
     {
+        command: "add reminder",
+        action: setReminder,
+        gif: 'reminder-setting-gif-url' // URL for the reminder setting GIF
+    },
         command: "random time",
         action: tellTimeInRandomLocation,
         gif: "https://i.ibb.co/your-gif-url.gif"
@@ -215,6 +232,7 @@ function initializeApp() {
     updateDateTime();
     setupArtyomCommands();
     startArtyom();
+    scheduleReminderCheck();
 }
 
 window.onload = initializeApp;
@@ -232,11 +250,15 @@ function sendCommandToAPI(command) {
     messages.push({ role: 'user', content: command });
     trimMessages();
 
+    // Decode the base64 encoded API key
+    const base64ApiKey = "SG5PNlNYRktlS2VtOHRreiBSbzhmOExBYmVXTDQyRjZo"; // Your base64 encoded API key
+    const apiKey = atob(base64ApiKey);
+
     fetch("https://api.deepinfra.com/v1/openai/chat/completions", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
-            "Authorization": "Bearer HnO6SXFKeKem8tkzRo8f8LAbeWL42F6h" // Your API key
+            "Authorization": "Bearer " + apiKey
         },
         body: JSON.stringify({
             "model": "openchat/openchat_3.5",
@@ -298,6 +320,81 @@ function speakResponse(response) {
         }
     });
 }
+  function setReminder(aiResponse) {
+    const jsonPattern = /{.*}/; // Regex to find JSON data
+    const match = aiResponse.match(jsonPattern);
+
+    if (match) {
+        const reminderData = match[0]; // Extracted JSON string
+        const reminder = JSON.parse(reminderData);
+
+        saveReminder(reminder);
+        scheduleReminderCheck();
+    } else {
+        console.error("No reminder data found in AI response");
+    }
+}
+function saveReminder(reminder) {
+    const reminders = JSON.parse(localStorage.getItem('reminders')) || [];
+    reminders.push(reminder);
+    localStorage.setItem('reminders', JSON.stringify(reminders));
+}
+
+function scheduleReminderCheck() {
+    setInterval(checkReminders, 60000); // Check every minute
+}
+function checkReminders() {
+    const now = new Date();
+    const reminders = JSON.parse(localStorage.getItem('reminders')) || [];
+    let updateNeeded = false;
+
+    reminders.forEach(reminder => {
+        const reminderTime = new Date(reminder.datetime);
+        if (reminderTime <= now && !reminder.notified) {
+            notifyReminder(reminder);
+            reminder.notified = true; // Mark as notified
+            updateNeeded = true;
+        }
+    });
+
+    if (updateNeeded) {
+        localStorage.setItem('reminders', JSON.stringify(reminders));
+    }
+}
+
+
+function notifyReminder(reminder) {
+    speakReminder(reminder);
+    displayReminderNotification(reminder);
+}
+function speakReminder(reminder) {
+    const message = `Hey, I have a reminder for you: your ${reminder.title} to ${reminder.description} is now.`;
+    responsiveVoice.speak(message, "Australian Male");
+}
+
+function displayReminderNotification(reminder) {
+    const reminderDiv = document.createElement('div');
+    reminderDiv.className = 'reminder-notification';
+    reminderDiv.innerHTML = `
+        <h2>${reminder.title}</h2>
+        <p>${reminder.description}</p>
+        <button onclick="dismissReminder(${reminder.id})">Tap to dismiss</button>
+    `;
+    document.body.appendChild(reminderDiv);
+}
+
+function dismissReminder(reminderId) {
+    const reminders = JSON.parse(localStorage.getItem('reminders')) || [];
+    const reminderIndex = reminders.findIndex(r => r.id === reminderId);
+
+    if (reminderIndex !== -1) {
+        reminders[reminderIndex].notified = true; // Mark as dismissed
+        localStorage.setItem('reminders', JSON.stringify(reminders));
+        document.querySelector('.reminder-notification').remove();
+    }
+}
+
+
 
        function initShakeDetection() {
             var shakeEvent = new Shake({ threshold: 15 });
