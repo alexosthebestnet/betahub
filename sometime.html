@@ -276,7 +276,7 @@ function sendCommandToAPI(command) {
         body: JSON.stringify({
             "model": "gpt-3.5-turbo",
             "messages": messages
-        })
+                })
     })
     .then(response => {
         if (!response.ok) {
@@ -291,19 +291,19 @@ function sendCommandToAPI(command) {
         trimMessages();
         speakResponse(reply);
         saveMessages();
-    })
-    .catch(error => {
-        console.error("API Error:", error.message);
-        setGif('https://i.ibb.co/QNn0wYP/Oh-no.gif');
-        document.getElementById('status').textContent = error.message;
-    });
-   // Check if the response ends with a question mark and activate dictation mode
+
+        // Check if the response ends with a question mark and activate dictation mode
         if (reply.trim().endsWith("?")) {
             console.log("Response ends with a question mark. Activating dictation mode.");
             isListeningForCommand = true;
             activateDictationMode();
         }
     })
+    .catch(error => {
+        console.error("API Error:", error.message);
+        setGif('https://i.ibb.co/QNn0wYP/Oh-no.gif');
+        document.getElementById('status').textContent = error.message;
+    });
 }
 
 function trimMessages() {
