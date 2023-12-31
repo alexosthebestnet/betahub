@@ -158,6 +158,20 @@ function fetchWeather() {
     // Implement the logic to fetch and display weather data here
 }
 
+  function startArtyom() {
+    artyom.initialize({
+        lang: "en-GB",
+        continuous: true,
+        listen: true,
+        debug: true
+    }).then(() => {
+        console.log("Artyom has been successfully initialized and is listening");
+        setupArtyomCommands();
+    }).catch(err => {
+        console.error("Artyom couldn't be initialized", err);
+    });
+}
+
 
 
 function activateDictationMode() {
@@ -195,19 +209,7 @@ function processCommand(command) {
 }
 
 let speechTimer;
-
-function startArtyom() {
-    artyom.initialize({
-        lang: "en-GB",
-        continuous: true,
-        listen: true,
-        debug: true
-    }).then(() => {
-        console.log("Artyom has been successfully initialized and listening");
-    }).catch(err => {
-        console.error("Artyom couldn't be initialized", err);
-    });
-}
+let listeningForAdditionalSpeech = false;
 
 function setupArtyomCommands() {
     console.log("Setting up Artyom commands");
@@ -215,22 +217,48 @@ function setupArtyomCommands() {
         indexes: [wakeWord],
         action: () => {
             console.log("Wake word recognized");
-            isListeningForCommand = true;
-            setGif('https://i.ibb.co/fn40PJm/I-hear-you.gif');
+            listeningForAdditionalSpeech = true;
             activateDictationMode();
-
-            // Reset and start the speech timer
-            clearTimeout(speechTimer);
-            speechTimer = setTimeout(() => {
-                if (isListeningForCommand) {
-                    processCommand("");
-                    isListeningForCommand = false;
-                    startArtyom();
-                }
-            }, 8000); //8 seconds wait time for additional speech
+            resetSpeechTimer(8000); // 8 seconds for additional speech
         }
     });
-    console.log("Artyom commands set up");
+}
+
+function activateDictationMode() {
+    if (artyom.isSpeaking() || artyom.isRecognizing()) {
+        artyom.fatality(); // Stop any current speech or recognition
+    }
+    
+    userDictation = artyom.newDictation({
+        continuous: true, // Keep listening continuously
+        onResult: text => {
+            console.log("Speech detected: ", text);
+            if (listeningForAdditionalSpeech) {
+                resetSpeechTimer(2000); // 2 seconds after speech ends
+            }
+        },
+        onStart: () => console.log("Dictation started"),
+        onEnd: () => {
+            console.log("Dictation stopped");
+            if (listeningForAdditionalSpeech) {
+                // Restart dictation if it stops unexpectedly while waiting for additional speech
+                activateDictationMode();
+            }
+        }
+    });
+
+    userDictation.start();
+}
+
+function resetSpeechTimer(delay) {
+    clearTimeout(speechTimer);
+    speechTimer = setTimeout(() => {
+        if (listeningForAdditionalSpeech) {
+            listeningForAdditionalSpeech = false;
+            processCommand(""); // Process empty command or adapt as needed
+            startArtyom(); // Restart wake word detection
+        }
+    }, delay);
 }
   
 window.onload = () => {
