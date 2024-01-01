@@ -158,7 +158,7 @@ function fetchWeather() {
     // Implement the logic to fetch and display weather data here
 }
 
-  function startArtyom() {
+ function startArtyom() {
     artyom.initialize({
         lang: "en-GB",
         continuous: true,
@@ -174,39 +174,35 @@ function fetchWeather() {
 
 
 
+
 function activateDictationMode() {
+    // Ensure Artyom isn't currently speaking or recognizing
     if (artyom.isSpeaking() || artyom.isRecognizing()) {
-        artyom.fatality(); // Ensure that Artyom isn't currently speaking or recognizing
+        artyom.fatality();
     }
-    
+  
     userDictation = artyom.newDictation({
-        continuous: true, // Enable continuous if HTTPS connection
-        onResult: function(text) {
-            console.log("Transcribed text:", text);
+        continuous: true, // Keep listening continuously
+        onResult: text => {
             if (isListeningForCommand) {
-                // Handle continuous speech input and reset timer for each new speech detected
+                // Reset the timer on new speech detected
                 clearTimeout(speechTimer);
                 speechTimer = setTimeout(() => {
                     processCommand(text);
-                    isListeningForCommand = false;
-                    startArtyom();
-                }, 2000); // 2 seconds delay after speech ends
+                    isListeningForCommand = false; // Stop listening for commands after processing
+                }, 2000); // 2 seconds delay to process command after speech ends
             }
         },
-        onStart: function() {
-            console.log("Dictation started by the user");
-        },
-        onEnd: function() {
+        onStart: () => console.log("Dictation started by the user"),
+        onEnd: () => {
             if (isListeningForCommand) {
-                // If dictation ends but we are still expecting speech, restart dictation
+                // Restart dictation if it ends while still listening for commands
                 activateDictationMode();
-            } else {
-                console.log("Dictation stopped by the user");
             }
         }
     });
 
-    userDictation.start(); // Start the dictation
+    userDictation.start();
 }
   
 function processCommand(command) {
@@ -220,18 +216,15 @@ let speechTimer;
 let listeningForAdditionalSpeech = false;
 
 function setupArtyomCommands() {
-    console.log("Setting up Artyom commands");
     artyom.addCommands({
         indexes: [wakeWord],
         action: () => {
-            console.log("Wake word recognized");
-            listeningForAdditionalSpeech = true;
-            activateDictationMode();
-            resetSpeechTimer(8000); // 8 seconds for additional speech
+            isListeningForCommand = true; // Enable command listening
+            activateDictationMode(); // Start dictation mode
         }
     });
 }
-
+  
 function activateDictationMode() {
     if (artyom.isSpeaking() || artyom.isRecognizing()) {
         artyom.fatality(); // Stop any current speech or recognition
