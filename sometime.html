@@ -158,24 +158,9 @@ function fetchWeather() {
     // Implement the logic to fetch and display weather data here
 }
 
- function startArtyom() {
-    artyom.initialize({
-        lang: "en-GB",
-        continuous: true,
-        listen: true,
-        debug: true
-    }).then(() => {
-        console.log("Artyom has been successfully initialized and is listening");
-        setupArtyomCommands();
-    }).catch(err => {
-        console.error("Artyom couldn't be initialized", err);
-    });
-}
-
-
-
 
 function activateDictationMode() {
+    // Stop any current speech or recognition
     if (artyom.isSpeaking() || artyom.isRecognizing()) {
         artyom.fatality();
     }
@@ -183,17 +168,20 @@ function activateDictationMode() {
     userDictation = artyom.newDictation({
         continuous: true,
         onResult: text => {
+            console.log("Speech detected:", text);
             if (isListeningForCommand) {
                 clearTimeout(speechTimer);
                 speechTimer = setTimeout(() => {
                     processCommand(text);
                     isListeningForCommand = false;
-                }, 2000);
+                    startArtyom();
+                }, 2000); // Wait for 2 seconds after speech ends
             }
         },
-        onStart: () => console.log("Dictation started by the user"),
+        onStart: () => console.log("Dictation started"),
         onEnd: () => {
             if (isListeningForCommand) {
+                // Restart dictation if it stops unexpectedly
                 activateDictationMode();
             }
         }
@@ -211,13 +199,42 @@ function processCommand(command) {
 let speechTimer;
 function setupArtyomCommands() {
     artyom.addCommands({
-        indexes: [wakeWord],
+        indexes: ["*"], // Wildcard to capture any speech after wake word
+        smart: true,
+        action: (i, wildcard) => {
+            if (isListeningForCommand) {
+                console.log("Command received:", wildcard);
+                processCommand(wildcard);
+                isListeningForCommand = false;
+                startArtyom();
+            }
+        }
+    });
+
+    artyom.addCommands({
+        indexes: [wakeWord], // Wake word
         action: () => {
+            console.log("Wake word recognized");
             isListeningForCommand = true;
             activateDictationMode();
         }
     });
 }
+
+function startArtyom() {
+    artyom.initialize({
+        lang: "en-GB",
+        continuous: true,
+        listen: true,
+        debug: true
+    }).then(() => {
+        console.log("Artyom successfully initialized");
+        setupArtyomCommands();
+    }).catch(err => {
+        console.error("Artyom couldn't be initialized:", err);
+    });
+}
+
 
 function resetSpeechTimer(delay = 2000) {
     clearTimeout(speechTimer);
