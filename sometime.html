@@ -176,27 +176,24 @@ function fetchWeather() {
 
 
 function activateDictationMode() {
-    // Ensure Artyom isn't currently speaking or recognizing
     if (artyom.isSpeaking() || artyom.isRecognizing()) {
         artyom.fatality();
     }
-  
+
     userDictation = artyom.newDictation({
-        continuous: true, // Keep listening continuously
+        continuous: true,
         onResult: text => {
             if (isListeningForCommand) {
-                // Reset the timer on new speech detected
                 clearTimeout(speechTimer);
                 speechTimer = setTimeout(() => {
                     processCommand(text);
-                    isListeningForCommand = false; // Stop listening for commands after processing
-                }, 2000); // 2 seconds delay to process command after speech ends
+                    isListeningForCommand = false;
+                }, 2000);
             }
         },
         onStart: () => console.log("Dictation started by the user"),
         onEnd: () => {
             if (isListeningForCommand) {
-                // Restart dictation if it ends while still listening for commands
                 activateDictationMode();
             }
         }
@@ -207,50 +204,33 @@ function activateDictationMode() {
   
 function processCommand(command) {
     setGif('https://i.ibb.co/B2JmjJc/Thinking.gif');
-    // Process the command here
-      console.log("Command to be processed:", command); // Log the command text
+    console.log("Command to be processed:", command);
     sendCommandToAPI(command);
 }
-
+  
 let speechTimer;
-let listeningForAdditionalSpeech = false;
+let isListeningForCommand = false;
 
 function setupArtyomCommands() {
     artyom.addCommands({
         indexes: [wakeWord],
         action: () => {
-            isListeningForCommand = true; // Enable command listening
-            activateDictationMode(); // Start dictation mode
+            isListeningForCommand = true;
+            activateDictationMode();
         }
     });
 }
-  
-function activateDictationMode() {
-    if (artyom.isSpeaking() || artyom.isRecognizing()) {
-        artyom.fatality(); // Stop any current speech or recognition
-    }
-    
-    userDictation = artyom.newDictation({
-        continuous: true, // Keep listening continuously
-        onResult: text => {
-            console.log("Speech detected: ", text);
-            if (listeningForAdditionalSpeech) {
-                resetSpeechTimer(2000); // 2 seconds after speech ends
-            }
-        },
-        onStart: () => console.log("Dictation started"),
-        onEnd: () => {
-            console.log("Dictation stopped");
-            if (listeningForAdditionalSpeech) {
-                // Restart dictation if it stops unexpectedly while waiting for additional speech
-                activateDictationMode();
-            }
+
+function resetSpeechTimer(delay = 2000) {
+    clearTimeout(speechTimer);
+    speechTimer = setTimeout(() => {
+        if (isListeningForCommand) {
+            processCommand("");
+            isListeningForCommand = false;
+            startArtyom();
         }
-    });
-
-    userDictation.start();
+    }, delay);
 }
-
 function resetSpeechTimer(delay = 2000) {
     clearTimeout(speechTimer);
     speechTimer = setTimeout(() => {
