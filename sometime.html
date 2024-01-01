@@ -175,32 +175,40 @@ function fetchWeather() {
 
 
 function activateDictationMode() {
-    artyom.fatality(); // Stop Artyom from listening to wake word
+    if (artyom.isSpeaking() || artyom.isRecognizing()) {
+        artyom.fatality(); // Ensure that Artyom isn't currently speaking or recognizing
+    }
+    
     userDictation = artyom.newDictation({
-        continuous: true,
-        onResult: text => {
-              console.log("Transcribed text:", text); // Log the transcribed text
+        continuous: true, // Enable continuous if HTTPS connection
+        onResult: function(text) {
+            console.log("Transcribed text:", text);
             if (isListeningForCommand) {
-                console.log("Command received:", text);
-                // Reset and start a shorter timer when speech is detected
+                // Handle continuous speech input and reset timer for each new speech detected
                 clearTimeout(speechTimer);
                 speechTimer = setTimeout(() => {
                     processCommand(text);
                     isListeningForCommand = false;
                     startArtyom();
-                }, 2000); // 2 seconds wait time after speech ends
+                }, 2000); // 2 seconds delay after speech ends
             }
         },
-        onStart: () => console.log("Dictation started"),
-        onEnd: () => {
-            console.log("Dictation stopped");
-            isListeningForCommand = false;
-            startArtyom();
+        onStart: function() {
+            console.log("Dictation started by the user");
+        },
+        onEnd: function() {
+            if (isListeningForCommand) {
+                // If dictation ends but we are still expecting speech, restart dictation
+                activateDictationMode();
+            } else {
+                console.log("Dictation stopped by the user");
+            }
         }
     });
-    userDictation.start();
-}
 
+    userDictation.start(); // Start the dictation
+}
+  
 function processCommand(command) {
     setGif('https://i.ibb.co/B2JmjJc/Thinking.gif');
     // Process the command here
@@ -250,13 +258,13 @@ function activateDictationMode() {
     userDictation.start();
 }
 
-function resetSpeechTimer(delay) {
+function resetSpeechTimer(delay = 2000) {
     clearTimeout(speechTimer);
     speechTimer = setTimeout(() => {
-        if (listeningForAdditionalSpeech) {
-            listeningForAdditionalSpeech = false;
-            processCommand(""); // Process empty command or adapt as needed
-            startArtyom(); // Restart wake word detection
+        if (isListeningForCommand) {
+            processCommand(""); // Process command even if it's empty to handle the state
+            isListeningForCommand = false;
+            startArtyom(); // Restart Artyom for wake word detection
         }
     }, delay);
 }
