@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Voice Assistant</title>
+    <script src="https://cdn.jsdelivr.net/npm/artyom.js/build/artyom.window.min.js"></script>
+    <!-- Add your styles here -->
+</head>
+<body>
+    <div id="output">Listening...</div>
+
+    <script>
+        if (typeof Artyom !== "undefined") {
+            const artyom = new Artyom();
+
+            let isListening = false;
+            let lastRecognized = '';
+            let silenceTimer;
+            let finalSilenceTimer;
+
+            // Function to start continuous listening
+            function startContinuousArtyom() {
+                artyom.fatality(); // Stop any previous instance
+
+                setTimeout(function() {
+                    artyom.initialize({
+                        lang: "en-GB",
+                        continuous: true,
+                        listen: true,
+                        debug: true,
+                        speed: 1
+                    }).then(() => {
+                        console.log("Artyom has been successfully initialized");
+                    }).catch((err) => {
+                        console.error("Artyom couldn't be initialized: ", err);
+                    });
+                }, 250);
+            }
+
+            // Function to remove punctuation from recognized text
+            function removePunctuation(text) {
+                return text.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"");
+            }
+
+            // Define the commands
+            let commands = [
+                {
+                    indexes: ["hey hub", "hey hun", "hey gabe", "hey hog"], // Exact wake words
+                    action: () => {
+                        artyom.say("How can I assist you?");
+                        isListening = true;
+                        clearTimeout(silenceTimer);
+                        clearTimeout(finalSilenceTimer);
+                        listenForSpeech();
+                    }
+                },
+                {
+                    indexes: ["*"],
+                    smart: true,
+                    action: (i, wildcard) => {
+                        // Handle the wildcard input after the wake word has been recognized
+                        // For now, we just log it to the console
+                        console.log(wildcard);
+                    }
+                }
+            ];
+
+            // Add the commands to Artyom
+            artyom.addCommands(commands);
+
+            function listenForSpeech() {
+                artyom.redirectRecognizedTextOutput((recognized, isFinal) => {
+                    let processedText = recognized.toLowerCase();
+                    processedText = removePunctuation(processedText);
+
+                    if (isFinal) {
+                        lastRecognized = processedText;
+                        isListening = false;
+                        clearTimeout(silenceTimer);
+                        processSpeechAfterDelay(2000); // 2 seconds delay after speaking
+                    } else {
+                        document.getElementById("output").textContent = processedText;
+                        clearTimeout(silenceTimer);
+                        silenceTimer = setTimeout(() => {
+                            if (isListening) {
+                                processSpeechAfterDelay(8000); // 8 seconds delay if no speech detected
+                            }
+                        }, 8000);
+                    }
+                });
+            }
+
+            function processSpeechAfterDelay(delay) {
+                finalSilenceTimer = setTimeout(() => {
+                    if (!isListening) {
+                        document.getElementById("output").textContent = lastRecognized;
+                        // Here you can add the code to process the recognized text
+                        // For example, sending it to OpenAI's API
+                    }
+                }, delay);
+            }
+
+            startContinuousArtyom();
+        } else {
+            console.error("Artyom is not defined. Please check the script source.");
+        }
+    </script>
+</body>
+</html>
