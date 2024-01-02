@@ -40,6 +40,7 @@
         const maxMessages = 7;
         const noAudioTimeout = 2000; // Time to wait for no audio input
         const wakeWord = "hey hub"; // Define your wake word
+        const base64ApiKey = "c2stTGhkRDZqUVI4OEFoaVJabEptbTVUM0JsYmtGSkNjcGJpc0hCRmZ0dTMzMzlzd1px"; // Your base64 encoded API key
 
         function startArtyom() {
             artyom.initialize({
@@ -62,6 +63,7 @@
                 action: () => {
                     console.log("Wake word recognized");
                     isListeningForCommand = true;
+                    setGif('https://i.ibb.co/Listening-Gif-URL.gif'); // Replace with your listening GIF URL
                 }
             });
 
@@ -73,6 +75,7 @@
                         console.log("Command recognized:", recognized);
                         processCommand(recognized);
                         isListeningForCommand = false;
+                        setGif('https://i.ibb.co/B2JmjJc/Thinking.gif'); // Processing GIF
                     }, noAudioTimeout);
                 }
             });
@@ -80,7 +83,6 @@
 
         function processCommand(command) {
             console.log("Command to be processed:", command);
-            setGif('https://i.ibb.co/B2JmjJc/Thinking.gif');
             messages.push({ role: 'user', content: command });
             trimMessages();
             sendCommandToAPI(command);
@@ -88,7 +90,37 @@
 
         function sendCommandToAPI(command) {
             console.log("Sending command to API:", command);
-            // Add your API call logic here
+            const apiKey = atob(base64ApiKey);
+
+            fetch("https://api.openai.com/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": "Bearer " + apiKey
+                },
+                body: JSON.stringify({
+                    "model": "gpt-3.5-turbo",
+                    "messages": messages
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                const reply = data.choices[0].message.content;
+                console.log("API Response:", reply);
+                messages.push({ role: 'assistant', content: reply });
+                trimMessages();
+                responsiveVoice.speak(reply, "UK English Male");
+                setGif('https://i.ibb.co/WxbwbD1/Normal-gif.gif'); // Reset to normal GIF after speaking
+            })
+            .catch(error => {
+                console.error("API Error:", error.message);
+                setGif('https://i.ibb.co/QNn0wYP/Oh-no.gif');
+            });
         }
 
         function trimMessages() {
