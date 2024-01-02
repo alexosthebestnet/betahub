@@ -199,18 +199,13 @@ function processCommand(command) {
     // Process the command...
     sendCommandToAPI(command);
 
-    // Reset the state
-    isListeningForCommand = false;
-    currentMessage = "";
+    // Stop Artyom before restarting
+    stopArtyom();
 
-    // Stop dictation mode
-    if (userDictation) {
-        userDictation.stop();
-    }
-
-    // Restart Artyom to listen for the wake word again
-    restartArtyomForWakeWord();
+    // Restart Artyom for wake word
+    startArtyom();
 }
+  
   function restartArtyomForWakeWord() {
     // Stop any ongoing Artyom processes
     artyom.fatality();
@@ -222,6 +217,12 @@ function processCommand(command) {
 }
 
 function startArtyom() {
+    // Check if Artyom is already listening
+    if (artyom.isListening()) {
+        console.log("Artyom is already listening");
+        return; // If already listening, do not reinitialize
+    }
+
     artyom.initialize({
         lang: "en-GB",
         continuous: true,
@@ -234,10 +235,10 @@ function startArtyom() {
     });
 }
 
-function stopArtyomListening() {
-    if (isArtyomListening) {
-        artyom.fatality(); // Stop Artyom
-        isArtyomListening = false; // Update the flag
+function stopArtyom() {
+    if (artyom.isListening()) {
+        artyom.fatality();
+        console.log("Artyom has been stopped");
     }
 }
 
