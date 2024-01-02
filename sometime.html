@@ -196,22 +196,32 @@ function sendCommandIfTimerExpires() {
 }
   
 function processCommand(command) {
-    setGif('https://i.ibb.co/B2JmjJc/Thinking.gif');
-    // Process the command here
+    // Process the command...
     sendCommandToAPI(command);
-  // After processing the command, stop dictation and go back to listening for wake word
-    userDictation.stop(); // Stop the dictation mode
-    startArtyom(); // Restart Artyom to listen for the wake word
+
+    // Reset the state
+    isListeningForCommand = false;
+    currentMessage = "";
+
+    // Stop dictation mode
+    if (userDictation) {
+        userDictation.stop();
+    }
+
+    // Restart Artyom to listen for the wake word again
+    restartArtyomForWakeWord();
+}
+  function restartArtyomForWakeWord() {
+    // Stop any ongoing Artyom processes
+    artyom.fatality();
+
+    // Give a brief delay before restarting to avoid immediate re-triggering
+    setTimeout(() => {
+        startArtyom();
+    }, 500); // Adjust delay as needed
 }
 
 function startArtyom() {
-    // Check if Artyom is already listening
-    if (isArtyomListening) {
-        return; // If already listening, do not reinitialize
-    }
-
-    artyom.fatality(); // Stop any previous instance, if any
-
     artyom.initialize({
         lang: "en-GB",
         continuous: true,
@@ -219,7 +229,6 @@ function startArtyom() {
         debug: true
     }).then(() => {
         console.log("Artyom has been successfully initialized to listen for wake word");
-        isArtyomListening = true; // Update the flag when Artyom starts listening
     }).catch(err => {
         console.error("Artyom couldn't be initialized", err);
     });
