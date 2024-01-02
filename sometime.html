@@ -157,6 +157,13 @@ function fetchWeather() {
     console.log("Fetching joke data...");
     // Implement the logic to fetch and display weather data here
 }
+  
+  function setReminder(reminderData) {
+    const reminder = JSON.parse(reminderData); // Parse the reminder data
+    saveReminder(reminder);
+    scheduleReminderCheck();
+}
+
 
 
 function activateDictationMode() {
@@ -359,21 +366,7 @@ function speakResponse(response) {
             recognition.start();
         }
     });
-}
-  function setReminder(aiResponse) {
-    const jsonPattern = /{.*}/; // Regex to find JSON data
-    const match = aiResponse.match(jsonPattern);
 
-    if (match) {
-        const reminderData = match[0]; // Extracted JSON string
-        const reminder = JSON.parse(reminderData);
-
-        saveReminder(reminder);
-        scheduleReminderCheck();
-    } else {
-        console.error("No reminder data found in AI response");
-    }
-}
 function saveReminder(reminder) {
     const reminders = JSON.parse(localStorage.getItem('reminders')) || [];
     reminders.push(reminder);
