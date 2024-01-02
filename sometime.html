@@ -83,6 +83,7 @@
 // Global variables
 // Global variables
 let isListeningForCommand = false;
+let isArtyomListening = false; // Global variable to track if Artyom is listening
 let speechTimeout; // Timer for sending the message
 let currentMessage = "";
 const wakeWord = "hey hub";
@@ -205,7 +206,7 @@ function processCommand(command) {
 
 function startArtyom() {
     // Check if Artyom is already listening
-    if (artyom.isListening()) {
+    if (isArtyomListening) {
         return; // If already listening, do not reinitialize
     }
 
@@ -218,11 +219,18 @@ function startArtyom() {
         debug: true
     }).then(() => {
         console.log("Artyom has been successfully initialized to listen for wake word");
+        isArtyomListening = true; // Update the flag when Artyom starts listening
     }).catch(err => {
         console.error("Artyom couldn't be initialized", err);
     });
 }
 
+function stopArtyomListening() {
+    if (isArtyomListening) {
+        artyom.fatality(); // Stop Artyom
+        isArtyomListening = false; // Update the flag
+    }
+}
 
 function initializeApp() {
     if (localStorage.getItem('messages')) {
