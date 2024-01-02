@@ -201,11 +201,8 @@ function processCommand(command) {
 
   console.log("round 2 baby lol")
 
-    // Stop Artyom before restarting
-    stopArtyom();
+     window.location.reload();
 
-    // Restart Artyom to listen for the wake word
-    startArtyom();
 }
   
   function restartArtyomForWakeWord() {
@@ -305,7 +302,7 @@ function sendCommandToAPI(command) {
         speakResponse(reply);
         saveMessages();
         resetForWakeWordListening();
-      return
+         window.location.reload();
     })
     .catch(error => {
         console.error("API Error:", error.message);
