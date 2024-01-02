@@ -186,6 +186,21 @@ function activateDictationMode() {
 
     userDictation.start();
 }
+function setReminder(aiResponse) {
+    const jsonPattern = /{.*}/; // Regex to find JSON data
+    const match = aiResponse.match(jsonPattern);
+
+    if (match) {
+        const reminderData = match[0]; // Extracted JSON string
+        const reminder = JSON.parse(reminderData);
+
+        saveReminder(reminder);
+        scheduleReminderCheck();
+    } else {
+        console.error("No reminder data found in AI response");
+    }
+}
+
 
 
 function processCommand(command) {
@@ -360,20 +375,7 @@ function speakResponse(response) {
         }
     });
 }
-  function setReminder(aiResponse) {
-    const jsonPattern = /{.*}/; // Regex to find JSON data
-    const match = aiResponse.match(jsonPattern);
 
-    if (match) {
-        const reminderData = match[0]; // Extracted JSON string
-        const reminder = JSON.parse(reminderData);
-
-        saveReminder(reminder);
-        scheduleReminderCheck();
-    } else {
-        console.error("No reminder data found in AI response");
-    }
-}
 function saveReminder(reminder) {
     const reminders = JSON.parse(localStorage.getItem('reminders')) || [];
     reminders.push(reminder);
