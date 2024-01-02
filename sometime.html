@@ -76,83 +76,83 @@
 
 <script src="shake.js"></script>
 <script src="https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/dist/face-api.js"></script>
- <script src="https://code.responsivevoice.org/responsivevoice.js?key=74a2wYAJ"></script>
-    <script>
-       // Global variables
-let listeningForCommand = false;
+<script src="https://code.responsivevoice.org/responsivevoice.js?key=74a2wYAJ"></script>
+<script src="https://cdn.jsdelivr.net/npm/artyom.js/build/artyom.window.min.js"></script>
+<script>
+    // Global variables
+// Global variables
+// Global variables
+let isListeningForCommand = false;
 const wakeWord = "hey hub";
-const silenceDelay = 2000; // 2 seconds
-let silenceTimer;
+let userDictation;
 let messages = [];
 const maxMessages = 7; // Maximum number of messages to keep
+let artyom = new Artyom(); // Initialize Artyom for wake word detection
 
-// Initialize Artyom for wake word detection
-let artyom = new Artyom();
-
-// Artyom command for wake word
-artyom.addCommands({
-    indexes: [wakeWord],
-    action: function(i) {
-        listeningForCommand = true;
-        setGif('https://i.ibb.co/fn40PJm/I-hear-you.gif');
-        addSystemMessage();
-        activateDictation();
-    }
-});
-
-function activateDictation() {
-    // Stop listening for wake word
-    artyom.fatality();
-
-    let UserDictation = artyom.newDictation({
-        continuous: true,
-        onResult: function(text) {
-            if (listeningForCommand) {
-                processCommand(text);
-            }
-        },
-        onStart: function() {
-            console.log("Dictation started");
-        },
-        onEnd: function() {
-            console.log("Dictation stopped");
-            // Restart listening for wake word
-            artyom.initialize({
-                lang: "en-GB",
-                continuous: true,
-                listen: true,
-                debug: true
-            });
+function setupArtyomCommands() {
+    artyom.addCommands({
+        indexes: [wakeWord],
+        action: () => {
+            console.log("Wake word recognized");
+            isListeningForCommand = true;
+            setGif('https://i.ibb.co/fn40PJm/I-hear-you.gif');
+            activateDictationMode();
         }
     });
+}
 
-    UserDictation.start();
+function activateDictationMode() {
+    artyom.fatality(); // Stop Artyom from listening to wake word
+    userDictation = artyom.newDictation({
+        continuous: true,
+        onResult: text => {
+            if (isListeningForCommand) {
+                console.log("Command received:", text);
+                processCommand(text);
+                isListeningForCommand = false;
+                startArtyom();
+            }
+        },
+        onStart: () => console.log("Dictation started"),
+        onEnd: () => {
+            console.log("Dictation stopped");
+            isListeningForCommand = false;
+            startArtyom();
+        }
+    });
+    userDictation.start();
 }
 
 function processCommand(command) {
-    listeningForCommand = false;
     setGif('https://i.ibb.co/B2JmjJc/Thinking.gif');
+    // Process the command here
     sendCommandToAPI(command);
 }
 
-window.onload = function() {
-    const savedMessages = localStorage.getItem('messages');
-    if (savedMessages) {
-        messages = JSON.parse(savedMessages);
-        loadModels();
-        initShakeDetection();
-    }
-    setGif('https://i.ibb.co/WxbwbD1/Normal-gif.gif');
-    updateDateTime();
-
-    // Start listening for wake word
+function startArtyom() {
     artyom.initialize({
         lang: "en-GB",
         continuous: true,
         listen: true,
         debug: true
+    }).then(() => {
+        console.log("Artyom has been successfully initialized");
+    }).catch(err => {
+        console.error("Artyom couldn't be initialized", err);
     });
-};
+}
+
+function initializeApp() {
+    if (localStorage.getItem('messages')) {
+        messages = JSON.parse(localStorage.getItem('messages'));
+    }
+    setGif('https://i.ibb.co/WxbwbD1/Normal-gif.gif');
+    updateDateTime();
+    setupArtyomCommands();
+    startArtyom();
+}
+
+window.onload = initializeApp;
 
 
 function addSystemMessage() {
