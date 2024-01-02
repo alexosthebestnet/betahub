@@ -199,7 +199,6 @@ function processCommand(command) {
     // Process the command...
     sendCommandToAPI(command);
 
-  
   console.log("round 2 baby lol")
 
     // Stop Artyom before restarting
@@ -219,31 +218,40 @@ function processCommand(command) {
     }, 500); // Adjust delay as needed
 }
 
-function startArtyom() {
-    // Check if Artyom is already listening
-    if (isArtyomListening) {
-        console.log("Artyom is already listening");
-        return; // If already listening, do not reinitialize
-    }
+let isArtyomActive = false;
 
-    artyom.initialize({
-        lang: "en-GB",
-        continuous: true,
-        listen: true,
-        debug: true
-    }).then(() => {
-        console.log("Artyom has been successfully initialized to listen for wake word");
-        isArtyomListening = true; // Set the flag to true when Artyom starts listening
-    }).catch(err => {
-        console.error("Artyom couldn't be initialized", err);
-    });
+function startArtyom() {
+    if (!isArtyomActive) {
+        artyom.initialize({
+            lang: "en-GB",
+            continuous: true,
+            listen: true,
+            debug: true
+        }).then(() => {
+            isArtyomActive = true;
+            console.log("Artyom successfully initialized");
+        }).catch(err => {
+            console.error("Artyom initialization failed: ", err);
+        });
+    } else {
+        console.log("Artyom is already active");
+    }
 }
 
-function stopArtyom() {
-    if (isArtyomListening) {
+function restartArtyom() {
+    if (isArtyomActive) {
         artyom.fatality();
-        isArtyomListening = false; // Set the flag to false when Artyom stops listening
-        console.log("Artyom has been stopped");
+        isArtyomActive = false;
+        setTimeout(startArtyom, 500); // Restart after a short delay
+    }
+}
+
+
+function stopArtyom() {
+     if (isArtyomActive) {
+        artyom.fatality();
+        isArtyomActive = false;
+       
     }
 }
 
