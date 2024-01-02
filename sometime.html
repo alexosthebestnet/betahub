@@ -34,19 +34,6 @@
     right: 10px;
     text-align: right;
 }
-  .reminder-notification {
-    position: fixed;
-    top: 20%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background-color: white;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-    text-align: center;
-    z-index: 100;
-}
-
 
 #info-widgets p {
     margin: 5px;
@@ -113,12 +100,11 @@ const commandActions = [
         gif: 'https://i.ibb.co/album/XYZ123/Joke-Plugin.gif' // GIF for the joke command
     },
     {
-        command: "remindfunc",
-        action: setReminder,
-        gif: "https://i.ibb.co/your-gif-url.gif" // GIF for the reminder command
+        command: "random time",
+        action: tellTimeInRandomLocation,
+        gif: "https://i.ibb.co/your-gif-url.gif"
     }
 ];
-
 
 
       function getRandomLocation() {
@@ -159,97 +145,34 @@ function fetchWeather() {
 }
 
 
-function activateDictationMode() {
-    if (artyom.isSpeaking() || artyom.isRecognizing()) {
-        artyom.fatality();
-    }
 
+function activateDictationMode() {
+    artyom.fatality(); // Stop Artyom from listening to wake word
     userDictation = artyom.newDictation({
         continuous: true,
         onResult: text => {
-            console.log("Speech detected: ", text);
             if (isListeningForCommand) {
-                clearTimeout(speechTimer);
-                speechTimer = setTimeout(() => {
-                    processCommand(text);
-                    isListeningForCommand = false;
-                }, 2000);
+                console.log("Command received:", text);
+                processCommand(text);
+                isListeningForCommand = false;
+                startArtyom();
             }
         },
         onStart: () => console.log("Dictation started"),
         onEnd: () => {
-            if (isListeningForCommand) {
-                activateDictationMode();
-            }
+            console.log("Dictation stopped");
+            isListeningForCommand = false;
+            startArtyom();
         }
     });
-
     userDictation.start();
 }
-function setReminder(aiResponse) {
-    const jsonPattern = /{.*}/; // Regex to find JSON data
-    const match = aiResponse.match(jsonPattern);
-
-    if (match) {
-        const reminderData = match[0]; // Extracted JSON string
-        const reminder = JSON.parse(reminderData);
-
-        saveReminder(reminder);
-        scheduleReminderCheck();
-    } else {
-        console.error("No reminder data found in AI response");
-    }
-}
-
-
 
 function processCommand(command) {
     setGif('https://i.ibb.co/B2JmjJc/Thinking.gif');
-    console.log("Command to be processed:", command);
+    // Process the command here
     sendCommandToAPI(command);
 }
-
-function setupArtyomCommands() {
-    artyom.addCommands([
-        {
-            indexes: [wakeWord], // Wake word
-            action: () => {
-                console.log("Wake word recognized");
-                isListeningForCommand = true;
-                activateDictationMode();
-            }
-        },
-        {
-            indexes: ["*"], // Wildcard to capture any speech after wake word
-            smart: true,
-            action: (i, wildcard) => {
-                console.log("Wildcard recognized:", wildcard);
-                if (isListeningForCommand) {
-                    processCommand(wildcard);
-                    isListeningForCommand = false;
-                    startArtyom();
-                }
-            }
-        }
-    ]);
-
-function resetSpeechTimer(delay = 2000) {
-    clearTimeout(speechTimer);
-    speechTimer = setTimeout(() => {
-        if (isListeningForCommand) {
-            processCommand("");
-            isListeningForCommand = false;
-        }
-    }, delay);
-}
-
-// Additional logic for starting Artyom and other functionalities.
-
-  
-
-  
-let speechTimer;
-
 
 function startArtyom() {
     artyom.initialize({
@@ -258,13 +181,25 @@ function startArtyom() {
         listen: true,
         debug: true
     }).then(() => {
-        console.log("Artyom successfully initialized");
-        setupArtyomCommands();
+        console.log("Artyom has been successfully initialized and listening");
     }).catch(err => {
-        console.error("Artyom couldn't be initialized:", err);
+        console.error("Artyom couldn't be initialized", err);
     });
 }
 
+function setupArtyomCommands() {
+    console.log("Setting up Artyom commands");
+    artyom.addCommands({
+        indexes: [wakeWord],
+        action: () => {
+            console.log("Wake word recognized");
+            isListeningForCommand = true;
+            setGif('https://i.ibb.co/fn40PJm/I-hear-you.gif');
+            activateDictationMode();
+        }
+    });
+    console.log("Artyom commands set up");
+}
 
 window.onload = () => {
     console.log("Initializing application");
@@ -280,7 +215,6 @@ function initializeApp() {
     updateDateTime();
     setupArtyomCommands();
     startArtyom();
-    scheduleReminderCheck();
 }
 
 window.onload = initializeApp;
@@ -298,20 +232,16 @@ function sendCommandToAPI(command) {
     messages.push({ role: 'user', content: command });
     trimMessages();
 
-    // Decode the base64 encoded API key
-    const base64ApiKey = "c2stTGhkRDZqUVI4OEFoaVJabEptbTVUM0JsYmtGSkNjcGJpc0hCRmZ0dTMzMzlzd1px"; // Your base64 encoded API key
-    const apiKey = atob(base64ApiKey);
-
-    fetch("https://api.openai.com/v1/chat/completions", {
+    fetch("https://api.deepinfra.com/v1/openai/chat/completions", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
-            "Authorization": "Bearer " + apiKey
+            "Authorization": "Bearer HnO6SXFKeKem8tkzRo8f8LAbeWL42F6h" // Your API key
         },
         body: JSON.stringify({
-            "model": "gpt-3.5-turbo",
+            "model": "openchat/openchat_3.5",
             "messages": messages
-                })
+        })
     })
     .then(response => {
         if (!response.ok) {
@@ -326,13 +256,6 @@ function sendCommandToAPI(command) {
         trimMessages();
         speakResponse(reply);
         saveMessages();
-
-        // Check if the response ends with a question mark and activate dictation mode
-        if (reply.trim().endsWith("?")) {
-            console.log("Response ends with a question mark. Activating dictation mode.");
-            isListeningForCommand = true;
-            activateDictationMode();
-        }
     })
     .catch(error => {
         console.error("API Error:", error.message);
@@ -375,68 +298,6 @@ function speakResponse(response) {
         }
     });
 }
-
-function saveReminder(reminder) {
-    const reminders = JSON.parse(localStorage.getItem('reminders')) || [];
-    reminders.push(reminder);
-    localStorage.setItem('reminders', JSON.stringify(reminders));
-}
-
-function scheduleReminderCheck() {
-    setInterval(checkReminders, 60000); // Check every minute
-}
-function checkReminders() {
-    const now = new Date();
-    const reminders = JSON.parse(localStorage.getItem('reminders')) || [];
-    let updateNeeded = false;
-
-    reminders.forEach(reminder => {
-        const reminderTime = new Date(reminder.datetime);
-        if (reminderTime <= now && !reminder.notified) {
-            notifyReminder(reminder);
-            reminder.notified = true; // Mark as notified
-            updateNeeded = true;
-        }
-    });
-
-    if (updateNeeded) {
-        localStorage.setItem('reminders', JSON.stringify(reminders));
-    }
-}
-
-
-function notifyReminder(reminder) {
-    speakReminder(reminder);
-    displayReminderNotification(reminder);
-}
-function speakReminder(reminder) {
-    const message = `Hey, I have a reminder for you: your ${reminder.title} to ${reminder.description} is now.`;
-    responsiveVoice.speak(message, "Australian Male");
-}
-
-function displayReminderNotification(reminder) {
-    const reminderDiv = document.createElement('div');
-    reminderDiv.className = 'reminder-notification';
-    reminderDiv.innerHTML = `
-        <h2>${reminder.title}</h2>
-        <p>${reminder.description}</p>
-        <button onclick="dismissReminder(${reminder.id})">Tap to dismiss</button>
-    `;
-    document.body.appendChild(reminderDiv);
-}
-
-function dismissReminder(reminderId) {
-    const reminders = JSON.parse(localStorage.getItem('reminders')) || [];
-    const reminderIndex = reminders.findIndex(r => r.id === reminderId);
-
-    if (reminderIndex !== -1) {
-        reminders[reminderIndex].notified = true; // Mark as dismissed
-        localStorage.setItem('reminders', JSON.stringify(reminders));
-        document.querySelector('.reminder-notification').remove();
-    }
-}
-
-
 
        function initShakeDetection() {
             var shakeEvent = new Shake({ threshold: 15 });
@@ -567,7 +428,7 @@ recognizeFaces();
 
 // Call updateDateTime every second
 setInterval(updateDateTime, 1000);
-}
+
     
 
     </script>
