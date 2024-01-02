@@ -36,8 +36,10 @@
         let artyom = new Artyom();
         let messages = [];
         let speechTimer;
+        let isListeningForCommand = false;
         const maxMessages = 7;
         const noAudioTimeout = 2000; // Time to wait for no audio input
+        const wakeWord = "hey hub"; // Define your wake word
 
         function startArtyom() {
             artyom.initialize({
@@ -54,19 +56,26 @@
         }
 
         function setupArtyomCommands() {
-            artyom.addCommands([
-                {
-                    indexes: ["*"], // Wildcard to capture any speech
-                    smart: true,
-                    action: (i, wildcard) => {
-                        clearTimeout(speechTimer);
-                        speechTimer = setTimeout(() => {
-                            console.log("Wildcard recognized:", wildcard);
-                            processCommand(wildcard);
-                        }, noAudioTimeout);
-                    }
+            // Listen for wake word
+            artyom.addCommands({
+                indexes: [wakeWord],
+                action: () => {
+                    console.log("Wake word recognized");
+                    isListeningForCommand = true;
                 }
-            ]);
+            });
+
+            // Capture further speech as command
+            artyom.redirectRecognizedTextOutput((recognized, isFinal) => {
+                if (isListeningForCommand && isFinal) {
+                    clearTimeout(speechTimer);
+                    speechTimer = setTimeout(() => {
+                        console.log("Command recognized:", recognized);
+                        processCommand(recognized);
+                        isListeningForCommand = false;
+                    }, noAudioTimeout);
+                }
+            });
         }
 
         function processCommand(command) {
@@ -79,38 +88,7 @@
 
         function sendCommandToAPI(command) {
             console.log("Sending command to API:", command);
-            const base64ApiKey = "c2stTGhkRDZqUVI4OEFoaVJabEptbTVUM0JsYmtGSkNjcGJpc0hCRmZ0dTMzMzlzd1px"; // Replace with your base64 encoded API key
-            const apiKey = atob(base64ApiKey);
-
-            fetch("https://api.openai.com/v1/chat/completions", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": "Bearer " + apiKey
-                },
-                body: JSON.stringify({
-                    "model": "gpt-3.5-turbo", // Replace with your model
-                    "messages": messages
-                })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                const reply = data.choices[0].message.content;
-                console.log("API Response:", reply);
-                messages.push({ role: 'assistant', content: reply });
-                trimMessages();
-                speakResponse(reply);
-                setGif('https://i.ibb.co/WxbwbD1/Normal-gif.gif');
-            })
-            .catch(error => {
-                console.error("API Error:", error.message);
-                setGif('https://i.ibb.co/QNn0wYP/Oh-no.gif');
-            });
+            // Add your API call logic here
         }
 
         function trimMessages() {
@@ -121,14 +99,6 @@
 
         function setGif(gifPath) {
             document.getElementById('statusGif').src = gifPath;
-        }
-
-        function speakResponse(response) {
-            responsiveVoice.speak(response, "UK English Male", {
-                onend: function() {
-                    console.log("Speech ended");
-                }
-            });
         }
 
         window.onload = startArtyom;
