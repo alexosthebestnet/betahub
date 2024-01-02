@@ -160,11 +160,10 @@ function fetchWeather() {
 
 
 function activateDictationMode() {
-    // Stop any current speech or recognition
     if (artyom.isSpeaking() || artyom.isRecognizing()) {
         artyom.fatality();
     }
-
+  
     userDictation = artyom.newDictation({
         continuous: true,
         onResult: text => {
@@ -175,13 +174,12 @@ function activateDictationMode() {
                     processCommand(text);
                     isListeningForCommand = false;
                     startArtyom();
-                }, 2000); // Wait for 2 seconds after speech ends
+                }, 2000);
             }
         },
         onStart: () => console.log("Dictation started"),
         onEnd: () => {
             if (isListeningForCommand) {
-                // Restart dictation if it stops unexpectedly
                 activateDictationMode();
             }
         }
@@ -189,30 +187,16 @@ function activateDictationMode() {
 
     userDictation.start();
 }
-  
+
 function processCommand(command) {
     setGif('https://i.ibb.co/B2JmjJc/Thinking.gif');
     console.log("Command to be processed:", command);
     sendCommandToAPI(command);
 }
-  
-let speechTimer;
+
 function setupArtyomCommands() {
     artyom.addCommands({
-        indexes: ["*"], // Wildcard to capture any speech after wake word
-        smart: true,
-        action: (i, wildcard) => {
-            if (isListeningForCommand) {
-                console.log("Command received:", wildcard);
-                processCommand(wildcard);
-                isListeningForCommand = false;
-                startArtyom();
-            }
-        }
-    });
-
-    artyom.addCommands({
-        indexes: [wakeWord], // Wake word
+        indexes: [wakeWord],
         action: () => {
             console.log("Wake word recognized");
             isListeningForCommand = true;
@@ -220,6 +204,25 @@ function setupArtyomCommands() {
         }
     });
 }
+
+function resetSpeechTimer(delay = 2000) {
+    clearTimeout(speechTimer);
+    speechTimer = setTimeout(() => {
+        if (isListeningForCommand) {
+            processCommand("");
+            isListeningForCommand = false;
+            startArtyom();
+        }
+    }, delay);
+}
+
+// Additional logic for starting Artyom and other functionalities.
+
+  
+
+  
+let speechTimer;
+
 
 function startArtyom() {
     artyom.initialize({
@@ -236,27 +239,6 @@ function startArtyom() {
 }
 
 
-function resetSpeechTimer(delay = 2000) {
-    clearTimeout(speechTimer);
-    speechTimer = setTimeout(() => {
-        if (isListeningForCommand) {
-            processCommand("");
-            isListeningForCommand = false;
-            startArtyom();
-        }
-    }, delay);
-}
-function resetSpeechTimer(delay = 2000) {
-    clearTimeout(speechTimer);
-    speechTimer = setTimeout(() => {
-        if (isListeningForCommand) {
-            processCommand(""); // Process command even if it's empty to handle the state
-            isListeningForCommand = false;
-            startArtyom(); // Restart Artyom for wake word detection
-        }
-    }, delay);
-}
-  
 window.onload = () => {
     console.log("Initializing application");
     initializeApp();
