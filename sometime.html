@@ -83,6 +83,8 @@
 // Global variables
 // Global variables
 let isListeningForCommand = false;
+let speechTimeout; // Timer for sending the message
+let currentMessage = "";
 const wakeWord = "hey hub";
 let userDictation;
 let messages = [];
@@ -161,21 +163,37 @@ function activateDictationMode() {
         onResult: text => {
             if (isListeningForCommand) {
                 console.log("Command received:", text);
-                processCommand(text);
-                isListeningForCommand = false;
-                startArtyom();
+                currentMessage += text + " "; // Append new speech to current message
+                resetSpeechTimer(2000); // Reset timer to 2 seconds
             }
         },
         onStart: () => console.log("Dictation started"),
         onEnd: () => {
             console.log("Dictation stopped");
+            sendCommandIfTimerExpires(); // Send command if timer has expired
             isListeningForCommand = false;
             startArtyom();
         }
     });
     userDictation.start();
+    resetSpeechTimer(8000); // Set initial timer to 8 seconds
 }
 
+function resetSpeechTimer(delay) {
+    clearTimeout(speechTimeout);
+    speechTimeout = setTimeout(() => {
+        sendCommandToAPI(currentMessage.trim()); // Send command to API
+        currentMessage = ""; // Reset current message
+    }, delay);
+}
+
+function sendCommandIfTimerExpires() {
+    if (currentMessage.trim() !== "") {
+        sendCommandToAPI(currentMessage.trim()); // Send command to API
+        currentMessage = ""; // Reset current message
+    }
+}
+  
 function processCommand(command) {
     setGif('https://i.ibb.co/B2JmjJc/Thinking.gif');
     // Process the command here
