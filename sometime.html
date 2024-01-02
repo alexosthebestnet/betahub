@@ -202,7 +202,7 @@ function processCommand(command) {
     // Stop Artyom before restarting
     stopArtyom();
 
-    // Restart Artyom for wake word
+    // Restart Artyom to listen for the wake word
     startArtyom();
 }
   
@@ -218,7 +218,7 @@ function processCommand(command) {
 
 function startArtyom() {
     // Check if Artyom is already listening
-    if (artyom.isListening()) {
+    if (isArtyomListening) {
         console.log("Artyom is already listening");
         return; // If already listening, do not reinitialize
     }
@@ -230,14 +230,16 @@ function startArtyom() {
         debug: true
     }).then(() => {
         console.log("Artyom has been successfully initialized to listen for wake word");
+        isArtyomListening = true; // Set the flag to true when Artyom starts listening
     }).catch(err => {
         console.error("Artyom couldn't be initialized", err);
     });
 }
 
 function stopArtyom() {
-    if (artyom.isListening()) {
+    if (isArtyomListening) {
         artyom.fatality();
+        isArtyomListening = false; // Set the flag to false when Artyom stops listening
         console.log("Artyom has been stopped");
     }
 }
