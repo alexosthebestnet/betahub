@@ -294,6 +294,7 @@ function sendCommandToAPI(command) {
         speakResponse(reply);
         saveMessages();
         resetForWakeWordListening();
+      return
     })
     .catch(error => {
         console.error("API Error:", error.message);
