@@ -88,62 +88,6 @@ let userDictation;
 let messages = [];
 const maxMessages = 7; // Maximum number of messages to keep
 let artyom = new Artyom(); // Initialize Artyom for wake word detection
-const commandActions = [
-    {
-        command: "weather",
-        action: fetchWeather,
-        gif: 'https://i.ibb.co/gRSdL49/Weather-Plug-in-gif.gif' // GIF for the weather command
-    },
-    {
-        command: "bee bee a ass",
-        action: tellJoke,
-        gif: 'https://i.ibb.co/album/XYZ123/Joke-Plugin.gif' // GIF for the joke command
-    },
-    {
-        command: "random time",
-        action: tellTimeInRandomLocation,
-        gif: "https://i.ibb.co/your-gif-url.gif"
-    }
-];
-
-
-      function getRandomLocation() {
-    const locations = [
-        { name: 'New York', utcOffset: -5 },
-        { name: 'London', utcOffset: 0 },
-        { name: 'Tokyo', utcOffset: 9 },
-        { name: 'Sydney', utcOffset: 11 },
-        { name: 'Paris', utcOffset: 1 },
-        { name: 'Moscow', utcOffset: 3 }
-    ];
-    return locations[Math.floor(Math.random() * locations.length)];
-}
-
-function getCurrentTime(utcOffset) {
-    const now = new Date();
-    const localTime = new Date(now.getTime() + utcOffset * 3600 * 1000);
-    return localTime.toTimeString().split(' ')[0]; // Extracts only the time part
-}
-
-function tellTimeInRandomLocation() {
-    const randomLocation = getRandomLocation();
-    const currentTime = getCurrentTime(randomLocation.utcOffset);
-    return `The current time in ${randomLocation.name} is ${currentTime}.`;
-}
-
-
-function fetchWeather() {
-    // Placeholder for weather fetching logic
-    console.log("Fetching weather data...");
-    // Implement the logic to fetch and display weather data here
-}
-
-  function tellJoke() {
-    // Placeholder for weather fetching logic
-    console.log("Fetching joke data...");
-    // Implement the logic to fetch and display weather data here
-}
-
 
 
 function activateDictationMode() {
