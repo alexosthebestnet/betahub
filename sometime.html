@@ -204,17 +204,25 @@ function processCommand(command) {
 }
 
 function startArtyom() {
+    // Check if Artyom is already listening
+    if (artyom.isListening()) {
+        return; // If already listening, do not reinitialize
+    }
+
+    artyom.fatality(); // Stop any previous instance, if any
+
     artyom.initialize({
         lang: "en-GB",
         continuous: true,
         listen: true,
         debug: true
     }).then(() => {
-        console.log("Artyom has been successfully initialized");
+        console.log("Artyom has been successfully initialized to listen for wake word");
     }).catch(err => {
         console.error("Artyom couldn't be initialized", err);
     });
 }
+
 
 function initializeApp() {
     if (localStorage.getItem('messages')) {
