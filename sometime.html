@@ -337,11 +337,13 @@ function speakResponse(response) {
     const speechText = actionResponse || cleanedResponse;
 
     setGif(gifToUse);
+      stopArtyom();
     responsiveVoice.speak(speechText, "Australian Male", {
         onend: function() {
             setGif('https://i.ibb.co/WxbwbD1/Normal-gif.gif');
             listeningForCommand = false;
-            recognition.start();
+              startArtyom();
+
         }
     });
 }
