@@ -163,17 +163,16 @@ function activateDictationMode() {
     if (artyom.isSpeaking() || artyom.isRecognizing()) {
         artyom.fatality();
     }
-  
+
     userDictation = artyom.newDictation({
         continuous: true,
         onResult: text => {
-            console.log("Speech detected:", text);
+            console.log("Speech detected: ", text);
             if (isListeningForCommand) {
                 clearTimeout(speechTimer);
                 speechTimer = setTimeout(() => {
                     processCommand(text);
                     isListeningForCommand = false;
-                    startArtyom();
                 }, 2000);
             }
         },
@@ -188,6 +187,7 @@ function activateDictationMode() {
     userDictation.start();
 }
 
+
 function processCommand(command) {
     setGif('https://i.ibb.co/B2JmjJc/Thinking.gif');
     console.log("Command to be processed:", command);
@@ -195,15 +195,28 @@ function processCommand(command) {
 }
 
 function setupArtyomCommands() {
-    artyom.addCommands({
-        indexes: [wakeWord],
-        action: () => {
-            console.log("Wake word recognized");
-            isListeningForCommand = true;
-            activateDictationMode();
+    artyom.addCommands([
+        {
+            indexes: [wakeWord], // Wake word
+            action: () => {
+                console.log("Wake word recognized");
+                isListeningForCommand = true;
+                activateDictationMode();
+            }
+        },
+        {
+            indexes: ["*"], // Wildcard to capture any speech after wake word
+            smart: true,
+            action: (i, wildcard) => {
+                console.log("Wildcard recognized:", wildcard);
+                if (isListeningForCommand) {
+                    processCommand(wildcard);
+                    isListeningForCommand = false;
+                    startArtyom();
+                }
+            }
         }
-    });
-}
+    ]);
 
 function resetSpeechTimer(delay = 2000) {
     clearTimeout(speechTimer);
@@ -211,7 +224,6 @@ function resetSpeechTimer(delay = 2000) {
         if (isListeningForCommand) {
             processCommand("");
             isListeningForCommand = false;
-            startArtyom();
         }
     }, delay);
 }
