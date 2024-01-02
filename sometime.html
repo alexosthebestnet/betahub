@@ -198,6 +198,9 @@ function processCommand(command) {
     setGif('https://i.ibb.co/B2JmjJc/Thinking.gif');
     // Process the command here
     sendCommandToAPI(command);
+  // After processing the command, stop dictation and go back to listening for wake word
+    userDictation.stop(); // Stop the dictation mode
+    startArtyom(); // Restart Artyom to listen for the wake word
 }
 
 function startArtyom() {
@@ -262,12 +265,18 @@ function sendCommandToAPI(command) {
         trimMessages();
         speakResponse(reply);
         saveMessages();
+        resetForWakeWordListening();
     })
     .catch(error => {
         console.error("API Error:", error.message);
         setGif('https://i.ibb.co/QNn0wYP/Oh-no.gif');
         document.getElementById('status').textContent = error.message;
     });
+}
+function resetForWakeWordListening() {
+    isListeningForCommand = false;
+    currentMessage = ""; // Reset the current message
+    startArtyom(); // Restart Artyom to listen for the wake word
 }
 
 function trimMessages() {
