@@ -35,7 +35,9 @@
     <script>
         let artyom = new Artyom();
         let messages = [];
+        let speechTimer;
         const maxMessages = 7;
+        const noAudioTimeout = 2000; // Time to wait for no audio input
 
         function startArtyom() {
             artyom.initialize({
@@ -57,8 +59,11 @@
                     indexes: ["*"], // Wildcard to capture any speech
                     smart: true,
                     action: (i, wildcard) => {
-                        console.log("Wildcard recognized:", wildcard);
-                        processCommand(wildcard);
+                        clearTimeout(speechTimer);
+                        speechTimer = setTimeout(() => {
+                            console.log("Wildcard recognized:", wildcard);
+                            processCommand(wildcard);
+                        }, noAudioTimeout);
                     }
                 }
             ]);
@@ -66,7 +71,7 @@
 
         function processCommand(command) {
             console.log("Command to be processed:", command);
-            setGif('https://i.ibb.co/B2JmjJc/Thinking.gif'); // Set thinking GIF
+            setGif('https://i.ibb.co/B2JmjJc/Thinking.gif');
             messages.push({ role: 'user', content: command });
             trimMessages();
             sendCommandToAPI(command);
@@ -74,15 +79,38 @@
 
         function sendCommandToAPI(command) {
             console.log("Sending command to API:", command);
-            // Simulate sending command to API and receiving a response
-            setTimeout(() => {
-                let reply = "This is a simulated response for: " + command;
-                messages.push({ role: 'assistant', content: reply });
-                setGif('https://i.ibb.co/WxbwbD1/Normal-gif.gif'); // Reset to normal GIF
+            const base64ApiKey = "c2stTGhkRDZqUVI4OEFoaVJabEptbTVUM0JsYmtGSkNjcGJpc0hCRmZ0dTMzMzlzd1px"; // Replace with your base64 encoded API key
+            const apiKey = atob(base64ApiKey);
+
+            fetch("https://api.openai.com/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": "Bearer " + apiKey
+                },
+                body: JSON.stringify({
+                    "model": "gpt-3.5-turbo", // Replace with your model
+                    "messages": messages
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                const reply = data.choices[0].message.content;
                 console.log("API Response:", reply);
-                addSystemMessage(reply);
+                messages.push({ role: 'assistant', content: reply });
                 trimMessages();
-            }, 2000);
+                speakResponse(reply);
+                setGif('https://i.ibb.co/WxbwbD1/Normal-gif.gif');
+            })
+            .catch(error => {
+                console.error("API Error:", error.message);
+                setGif('https://i.ibb.co/QNn0wYP/Oh-no.gif');
+            });
         }
 
         function trimMessages() {
@@ -95,9 +123,12 @@
             document.getElementById('statusGif').src = gifPath;
         }
 
-        function addSystemMessage(message) {
-            messages.push({ role: 'system', content: message });
-            trimMessages();
+        function speakResponse(response) {
+            responsiveVoice.speak(response, "UK English Male", {
+                onend: function() {
+                    console.log("Speech ended");
+                }
+            });
         }
 
         window.onload = startArtyom;
