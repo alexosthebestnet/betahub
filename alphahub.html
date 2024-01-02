@@ -34,12 +34,11 @@
     <script src="https://cdn.jsdelivr.net/npm/artyom.js/build/artyom.window.min.js"></script>
     <script>
         let artyom = new Artyom();
-        let messages = [];
-        let speechTimer;
         let isListeningForCommand = false;
+        const wakeWord = "hey hub";
+        let speechTimer;
         const maxMessages = 7;
-        const noAudioTimeout = 2000; // Time to wait for no audio input
-        const wakeWord = "hey hub"; // Define your wake word
+        const noAudioTimeout = 2000; // 2 seconds of no audio input
         const base64ApiKey = "c2stTGhkRDZqUVI4OEFoaVJabEptbTVUM0JsYmtGSkNjcGJpc0hCRmZ0dTMzMzlzd1px"; // Your base64 encoded API key
 
         function startArtyom() {
@@ -57,34 +56,35 @@
         }
 
         function setupArtyomCommands() {
-            // Listen for wake word
-            artyom.addCommands({
-                indexes: [wakeWord],
-                action: () => {
-                    console.log("Wake word recognized");
-                    isListeningForCommand = true;
-                    setGif('https://i.ibb.co/Listening-Gif-URL.gif'); // Replace with your listening GIF URL
+            artyom.addCommands([
+                {
+                    indexes: [wakeWord], // Wake word
+                    action: () => {
+                        console.log("Wake word recognized");
+                        isListeningForCommand = true;
+                        setGif('https://i.ibb.co/Listening-Gif-URL.gif'); // Replace with your listening GIF URL
+                    }
+                },
+                {
+                    indexes: ["*"], // Wildcard to capture any speech after wake word
+                    smart: true,
+                    action: (i, wildcard) => {
+                        if (isListeningForCommand) {
+                            clearTimeout(speechTimer);
+                            speechTimer = setTimeout(() => {
+                                console.log("Command recognized:", wildcard);
+                                processCommand(wildcard);
+                                isListeningForCommand = false;
+                            }, noAudioTimeout);
+                        }
+                    }
                 }
-            });
-
-            // Capture further speech as command
-            artyom.redirectRecognizedTextOutput((recognized, isFinal) => {
-                if (isListeningForCommand && isFinal) {
-                    clearTimeout(speechTimer);
-                    speechTimer = setTimeout(() => {
-                        console.log("Command recognized:", recognized);
-                        processCommand(recognized);
-                        isListeningForCommand = false;
-                        setGif('https://i.ibb.co/B2JmjJc/Thinking.gif'); // Processing GIF
-                    }, noAudioTimeout);
-                }
-            });
+            ]);
         }
 
         function processCommand(command) {
             console.log("Command to be processed:", command);
-            messages.push({ role: 'user', content: command });
-            trimMessages();
+            setGif('https://i.ibb.co/B2JmjJc/Thinking.gif'); // Processing GIF
             sendCommandToAPI(command);
         }
 
@@ -100,7 +100,7 @@
                 },
                 body: JSON.stringify({
                     "model": "gpt-3.5-turbo",
-                    "messages": messages
+                    "messages": [{ "role": "user", "content": command }]
                 })
             })
             .then(response => {
@@ -112,8 +112,6 @@
             .then(data => {
                 const reply = data.choices[0].message.content;
                 console.log("API Response:", reply);
-                messages.push({ role: 'assistant', content: reply });
-                trimMessages();
                 responsiveVoice.speak(reply, "UK English Male");
                 setGif('https://i.ibb.co/WxbwbD1/Normal-gif.gif'); // Reset to normal GIF after speaking
             })
@@ -121,12 +119,6 @@
                 console.error("API Error:", error.message);
                 setGif('https://i.ibb.co/QNn0wYP/Oh-no.gif');
             });
-        }
-
-        function trimMessages() {
-            if (messages.length > maxMessages) {
-                messages = messages.slice(-maxMessages);
-            }
         }
 
         function setGif(gifPath) {
